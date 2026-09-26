@@ -1,0 +1,2110 @@
+Got it. The application name should be **Future Tech**. Here is the updated prompt with the app name incorporated throughout.
+
+# Future Tech — Tuition Center Management Mobile Application
+
+Build a production-ready mobile application called **Future Tech** for managing a tuition/learning center with a large number of students from different colleges, schools, departments, and academic years.
+
+The application must be clean, modern, responsive, secure, and easy for a single Admin to manage.
+
+---
+
+# 1. Application Name
+
+**Future Tech**
+
+Use **Future Tech** consistently in:
+
+* App name
+* Splash screen
+* Login screen
+* Registration screen
+* Dashboard
+* App bar/header
+* Email templates
+* Notifications
+* App metadata
+
+Suggested branding:
+
+```text
+Future Tech
+Learn. Grow. Achieve.
+```
+
+Do not use generic names such as "Tuition Center App" in the actual UI.
+
+---
+
+# 2. User Types
+
+There are exactly **two user types**:
+
+```text
+ADMIN
+STUDENT
+```
+
+## Admin
+
+There is only **one Admin**.
+
+The Admin manages:
+
+* Student registration requests
+* Student profiles
+* Colleges/schools
+* Departments
+* Attendance
+* Fees
+* Payments
+* Daily tasks
+* Reports
+* Application settings
+
+## Student
+
+Students can:
+
+* Register
+* Wait for Admin approval
+* Login after approval
+* Complete personal information
+* View their profile
+* View attendance
+* View fees
+* View payment history
+* View daily tasks
+* Update task status
+* Update allowed profile information
+
+There must NOT be:
+
+* Staff role
+* Teacher role
+* Faculty role
+* Separate tuition-batch management
+
+---
+
+# 3. Important Meaning of "Batch"
+
+In Future Tech, **Batch does NOT mean a tuition class or a group attending at a particular time.**
+
+Batch means the student's **academic batch**, determined by:
+
+```text
+Joining Year → Passing Year
+```
+
+Examples:
+
+### Engineering
+
+```text
+Joining Year: 2023
+Passing Year: 2027
+
+Academic Batch:
+2023–2027
+```
+
+Engineering normally has 4 years.
+
+### Arts / Science
+
+```text
+Joining Year: 2023
+Passing Year: 2026
+
+Academic Batch:
+2023–2026
+```
+
+Arts/Science normally has 3 years.
+
+The system should calculate/display:
+
+```text
+academic_batch = joining_year + "–" + passing_year
+```
+
+Do not create a separate `batches` table for tuition classes.
+
+---
+
+# 4. Technology Stack
+
+## Mobile Application
+
+Use:
+
+* Flutter
+* Dart
+* Material 3
+* Responsive Android UI
+* REST API integration
+* Secure local token storage
+* Clean architecture
+
+## Backend
+
+Use:
+
+* Java
+* Spring Boot
+* Spring Web
+* Spring Data JPA
+* Spring Security
+* JWT Authentication
+* Bean Validation
+* REST APIs
+* DTOs
+* Service Layer
+* Repository Layer
+* Global Exception Handling
+
+## Database
+
+Use:
+
+* MySQL
+* Proper primary keys
+* Foreign keys
+* Unique constraints
+* Indexes
+* Timestamps
+
+## Email
+
+Use:
+
+**Resend**
+
+Email is required only for:
+
+1. Student registration → Admin notification
+2. Admin approval → Student notification
+
+Do NOT send emails for:
+
+* Fee payments
+* Fee reminders
+* Daily tasks
+* Attendance
+
+These should be available inside the application.
+
+---
+
+# 5. UI/UX Design
+
+Use a modern **Green + Orange** theme.
+
+## Main Colors
+
+```text
+Primary Green       #16A34A
+Dark Green          #15803D
+Light Green         #DCFCE7
+
+Primary Orange      #F59E0B
+Dark Orange         #D97706
+Light Orange        #FEF3C7
+
+Background          #F8FAFC
+Card                #FFFFFF
+
+Main Text           #17211B
+Secondary Text      #64748B
+Border              #E2E8F0
+
+Error / Danger      #DC2626
+```
+
+## Color usage
+
+### Green
+
+Use for:
+
+* Primary buttons
+* Login
+* Register
+* Save
+* Accept
+* Active
+* Paid
+* Present
+* Completed
+
+### Orange
+
+Use for:
+
+* Pending
+* Fee due
+* Tasks
+* Important information
+* Registration requests
+* Reminders
+
+### Red
+
+Use only for:
+
+* Reject
+* Delete
+* Error
+* Overdue
+* Absent
+
+Do not make the entire UI green or orange.
+
+Use:
+
+```text
+Light background
++
+White cards
++
+Green primary actions
++
+Orange attention indicators
+```
+
+Use rounded cards, clean spacing, subtle shadows, and modern typography.
+
+Recommended font:
+
+**Inter**
+
+---
+
+# 6. Application Flow
+
+The overall application flow is:
+
+```text
+                    FUTURE TECH
+                         |
+             +-----------+-----------+
+             |                       |
+           ADMIN                   STUDENT
+             |                       |
+        Admin Login               Register
+             |                       |
+        Dashboard              Pending Approval
+             |                       |
+      +------+------+                |
+      |      |     |                 |
+   Students Fees Tasks               |
+      |      |     |                 |
+      +------+------+                 |
+             |                       |
+             |                  Admin Approves
+             |                       |
+             |                       ↓
+             |                 Approval Email
+             |                       |
+             |                       ↓
+             |                Student Login
+             |                       |
+             |                       ↓
+             |                Complete Profile
+             |                       |
+             |                       ↓
+             |                Student Dashboard
+```
+
+---
+
+# 7. Student Registration
+
+The first registration screen should ask only:
+
+```text
+Full Name
+Email
+Password
+College / School
+```
+
+Example:
+
+```text
+Full Name:
+Arun Kumar
+
+Email:
+arun@gmail.com
+
+Password:
+********
+
+College / School:
+Kamaraj College
+```
+
+After registration:
+
+```text
+Student
+   ↓
+Spring Boot
+   ↓
+Create account
+   ↓
+Status = PENDING_APPROVAL
+   ↓
+Send email to Admin
+```
+
+The student must NOT access the main application yet.
+
+Show:
+
+```text
+Registration Successful
+
+Your registration request has been sent
+to Future Tech Admin.
+
+Please wait for approval.
+You will receive an email after your
+account is approved.
+```
+
+---
+
+# 8. Admin Registration Request
+
+Admin dashboard must contain:
+
+```text
+Student Requests
+```
+
+Example:
+
+```text
+New Registration
+
+Arun Kumar
+arun@gmail.com
+Kamaraj College
+
+Status:
+🟠 Pending
+
+[ ACCEPT ]    [ REJECT ]
+```
+
+Admin can:
+
+```text
+Accept
+Reject
+```
+
+---
+
+# 9. Admin Registration Email
+
+When a student registers, send an email using Resend.
+
+Example:
+
+```text
+Subject:
+New Future Tech Student Registration
+
+A new student has registered.
+
+Name:
+Arun Kumar
+
+Email:
+arun@gmail.com
+
+Institution:
+Kamaraj College
+
+Please open the Future Tech application
+to review the registration request.
+```
+
+Do not put insecure approval credentials directly into the email.
+
+The Admin should approve from the application.
+
+---
+
+# 10. Approval Flow
+
+When Admin accepts:
+
+```text
+PENDING_APPROVAL
+       ↓
+APPROVED
+```
+
+Send an email to the student.
+
+Example:
+
+```text
+Subject:
+Future Tech Account Approved
+
+Hello Arun,
+
+Your Future Tech account has been approved.
+
+Please login to the application and
+complete your personal and academic profile.
+
+Welcome to Future Tech!
+```
+
+If rejected:
+
+```text
+PENDING_APPROVAL
+       ↓
+REJECTED
+```
+
+The student should see an appropriate status message.
+
+---
+
+# 11. Student Profile Completion
+
+After approval, the student logs in.
+
+If the profile is incomplete, show:
+
+```text
+Complete Your Profile
+
+Please provide your personal and academic
+information to continue.
+```
+
+---
+
+# 12. Personal Information
+
+Collect:
+
+```text
+First Name
+Last Name
+Date of Birth
+Gender
+Phone Number
+Address
+City
+Parent / Guardian Name
+Parent / Guardian Phone
+Profile Photo
+```
+
+---
+
+# 13. Education Information
+
+This is an important part of Future Tech.
+
+Ask:
+
+```text
+Education Type
+```
+
+Options:
+
+```text
+School
+Engineering
+Arts & Science
+Polytechnic
+Other
+```
+
+---
+
+# 14. College / School Information
+
+If the student selects **School**:
+
+Ask:
+
+```text
+School Name
+Class / Standard
+Section
+Academic Year
+```
+
+Example:
+
+```text
+School:
+ABC Higher Secondary School
+
+Class:
+12
+
+Section:
+A
+
+Academic Year:
+2026–2027
+```
+
+---
+
+# 15. Engineering Information
+
+If the student selects **Engineering**, ask:
+
+```text
+College
+Department
+Joining Year
+Passing Year
+```
+
+Example:
+
+```text
+College:
+Kamaraj College of Engineering
+
+Department:
+Computer Science and Engineering
+
+Joining Year:
+2023
+
+Passing Year:
+2027
+
+Academic Batch:
+2023–2027
+```
+
+The system should automatically generate the Academic Batch.
+
+Do not ask the student to manually enter:
+
+```text
+2023–2027
+```
+
+Instead calculate it from:
+
+```text
+joining_year
+passing_year
+```
+
+---
+
+# 16. Arts & Science Information
+
+If the student selects **Arts & Science**, ask:
+
+```text
+College
+Department
+Joining Year
+Passing Year
+```
+
+Example:
+
+```text
+College:
+XYZ College
+
+Department:
+B.Sc Computer Science
+
+Joining Year:
+2023
+
+Passing Year:
+2026
+
+Academic Batch:
+2023–2026
+```
+
+---
+
+# 17. Polytechnic Information
+
+Ask:
+
+```text
+College
+Department
+Joining Year
+Passing Year
+```
+
+The Academic Batch should again be calculated automatically.
+
+---
+
+# 18. Education Database Design
+
+Do NOT create a generic tuition `batch` table.
+
+Use academic information connected to the student.
+
+The student relationship should conceptually be:
+
+```text
+Student
+   |
+   +── Education Type
+   |
+   +── College / School
+   |
+   +── Department
+   |
+   +── Joining Year
+   |
+   +── Passing Year
+   |
+   +── Academic Batch
+```
+
+---
+
+# 19. Database — users
+
+Purpose: Authentication.
+
+```text
+users
+--------------------------------
+id                  BIGINT PK
+name                VARCHAR
+email               VARCHAR UNIQUE
+password_hash       VARCHAR
+user_type           ENUM('ADMIN','STUDENT')
+phone               VARCHAR
+is_active           BOOLEAN
+created_at          TIMESTAMP
+updated_at          TIMESTAMP
+```
+
+Passwords must always be hashed.
+
+Never store plain-text passwords.
+
+---
+
+# 20. Database — students
+
+Purpose: Store student information.
+
+```text
+students
+--------------------------------
+id                  BIGINT PK
+user_id             BIGINT FK → users.id
+student_code        VARCHAR UNIQUE
+
+first_name          VARCHAR
+last_name           VARCHAR
+
+date_of_birth       DATE
+gender              VARCHAR
+phone               VARCHAR
+address             TEXT
+city                VARCHAR
+
+education_type      ENUM(
+                        'SCHOOL',
+                        'ENGINEERING',
+                        'ARTS_SCIENCE',
+                        'POLYTECHNIC',
+                        'OTHER'
+                      )
+
+institution_id      BIGINT FK → institutions.id
+department_id       BIGINT FK → departments.id
+
+class_standard      VARCHAR NULL
+section             VARCHAR NULL
+academic_year       VARCHAR NULL
+
+joining_year        INT NULL
+passing_year        INT NULL
+academic_batch      VARCHAR NULL
+
+parent_name         VARCHAR
+parent_phone        VARCHAR
+
+profile_photo_url   VARCHAR
+
+joining_date        DATE
+
+profile_status      ENUM(
+                        'INCOMPLETE',
+                        'COMPLETED'
+                      )
+
+status              ENUM(
+                        'PENDING_APPROVAL',
+                        'APPROVED',
+                        'REJECTED',
+                        'ACTIVE',
+                        'INACTIVE'
+                      )
+
+created_at          TIMESTAMP
+updated_at          TIMESTAMP
+```
+
+For college students:
+
+```text
+joining_year
+passing_year
+academic_batch
+```
+
+are required.
+
+For school students:
+
+```text
+class_standard
+section
+academic_year
+```
+
+are required.
+
+---
+
+# 21. Database — institutions
+
+Use one table for colleges and schools.
+
+```text
+institutions
+--------------------------------
+id                  BIGINT PK
+institution_name    VARCHAR
+institution_type    ENUM(
+                        'SCHOOL',
+                        'COLLEGE'
+                      )
+location            VARCHAR
+is_active           BOOLEAN
+created_at          TIMESTAMP
+updated_at          TIMESTAMP
+```
+
+Examples:
+
+```text
+Kamaraj College of Engineering
+ABC Arts and Science College
+XYZ Higher Secondary School
+```
+
+---
+
+# 22. Database — departments
+
+Purpose: Store departments.
+
+```text
+departments
+--------------------------------
+id                  BIGINT PK
+institution_id      BIGINT FK → institutions.id
+department_name     VARCHAR
+department_code     VARCHAR
+is_active           BOOLEAN
+created_at          TIMESTAMP
+updated_at          TIMESTAMP
+```
+
+Examples:
+
+```text
+Computer Science and Engineering
+Information Technology
+Mechanical Engineering
+B.Sc Computer Science
+B.Com
+BBA
+```
+
+For schools, department may be NULL.
+
+---
+
+# 23. Academic Batch
+
+Do not create a separate `batches` table.
+
+Academic batch is derived from:
+
+```text
+joining_year
++
+passing_year
+```
+
+Example:
+
+```text
+joining_year = 2023
+passing_year = 2027
+
+academic_batch = "2023–2027"
+```
+
+Store it only if useful for efficient display/search, or calculate it dynamically.
+
+The backend must validate that:
+
+```text
+passing_year > joining_year
+```
+
+---
+
+# 24. Fees
+
+Admin can assign fees to individual students.
+
+There is no tuition-batch fee system.
+
+Database:
+
+```text
+fee_records
+--------------------------------
+id                  BIGINT PK
+student_id          BIGINT FK → students.id
+fee_name            VARCHAR
+total_amount        DECIMAL(10,2)
+discount_amount     DECIMAL(10,2)
+final_amount        DECIMAL(10,2)
+due_date             DATE
+status              ENUM(
+                        'PENDING',
+                        'PARTIALLY_PAID',
+                        'PAID',
+                        'OVERDUE',
+                        'CANCELLED'
+                      )
+created_at          TIMESTAMP
+updated_at          TIMESTAMP
+```
+
+Calculation:
+
+```text
+final_amount =
+total_amount - discount_amount
+```
+
+---
+
+# 25. Payments
+
+```text
+payments
+--------------------------------
+id                  BIGINT PK
+fee_record_id       BIGINT FK → fee_records.id
+student_id          BIGINT FK → students.id
+amount              DECIMAL(10,2)
+payment_date        DATE
+payment_method      ENUM(
+                        'CASH',
+                        'UPI',
+                        'BANK_TRANSFER',
+                        'CARD'
+                      )
+transaction_id      VARCHAR NULL
+receipt_number      VARCHAR UNIQUE
+remarks             TEXT NULL
+created_at          TIMESTAMP
+```
+
+Pending amount:
+
+```text
+pending =
+final_amount - SUM(payments.amount)
+```
+
+Do not manually maintain a separate pending amount that can become inconsistent.
+
+---
+
+# 26. Attendance
+
+Admin records attendance directly for students.
+
+There is no batch-based attendance.
+
+```text
+attendance
+--------------------------------
+id                  BIGINT PK
+student_id          BIGINT FK → students.id
+attendance_date     DATE
+status              ENUM(
+                        'PRESENT',
+                        'ABSENT'
+                      )
+remarks             VARCHAR NULL
+created_at          TIMESTAMP
+```
+
+Unique constraint:
+
+```text
+student_id + attendance_date
+```
+
+This prevents duplicate attendance records for the same student on the same day.
+
+Admin screen:
+
+```text
+Date: 24-09-2026
+
+Students
+
+Arun        🟢 Present
+Bala        🟢 Present
+Kumar       🔴 Absent
+Ravi        🟢 Present
+
+[ SAVE ATTENDANCE ]
+```
+
+Student can only view attendance.
+
+---
+
+# 27. Daily Tasks
+
+Admin creates daily tasks.
+
+Tasks are NOT tied to tuition batches.
+
+Admin can assign tasks to:
+
+* All students
+* Selected students
+* Students from a particular institution
+* Students from a particular department
+* Students from a particular academic batch
+
+Example:
+
+```text
+Target:
+Engineering
+CSE
+2023–2027
+```
+
+Task:
+
+```text
+Title:
+Java Constructor Practice
+
+Description:
+Complete questions 1–10.
+
+Due Date:
+24-09-2026
+```
+
+---
+
+# 28. tasks table
+
+```text
+tasks
+--------------------------------
+id                  BIGINT PK
+title               VARCHAR
+description         TEXT
+created_by          BIGINT FK → users.id
+created_date        DATE
+due_date            DATE
+created_at          TIMESTAMP
+updated_at          TIMESTAMP
+```
+
+---
+
+# 29. task_targets
+
+Because tasks are not connected to tuition batches, use a flexible target system.
+
+```text
+task_targets
+--------------------------------
+id                  BIGINT PK
+task_id             BIGINT FK → tasks.id
+
+target_type         ENUM(
+                        'ALL_STUDENTS',
+                        'STUDENT',
+                        'INSTITUTION',
+                        'DEPARTMENT',
+                        'ACADEMIC_BATCH'
+                      )
+
+student_id          BIGINT NULL
+institution_id      BIGINT NULL
+department_id       BIGINT NULL
+academic_batch      VARCHAR NULL
+
+created_at          TIMESTAMP
+```
+
+Examples:
+
+### All students
+
+```text
+target_type = ALL_STUDENTS
+```
+
+### One student
+
+```text
+target_type = STUDENT
+student_id = 25
+```
+
+### One department
+
+```text
+target_type = DEPARTMENT
+department_id = 4
+```
+
+### One academic batch
+
+```text
+target_type = ACADEMIC_BATCH
+academic_batch = 2023–2027
+```
+
+---
+
+# 30. student_tasks
+
+Track the status for each student.
+
+```text
+student_tasks
+--------------------------------
+id                  BIGINT PK
+task_id             BIGINT FK → tasks.id
+student_id          BIGINT FK → students.id
+status              ENUM(
+                        'PENDING',
+                        'IN_PROGRESS',
+                        'COMPLETED'
+                      )
+completed_at        TIMESTAMP NULL
+remarks             TEXT NULL
+created_at          TIMESTAMP
+updated_at          TIMESTAMP
+```
+
+---
+
+# 31. In-App Notifications
+
+Email is NOT required for tasks.
+
+If notifications are needed, use in-app notifications.
+
+```text
+notifications
+--------------------------------
+id                  BIGINT PK
+student_id          BIGINT FK → students.id
+title               VARCHAR
+message             TEXT
+notification_type   VARCHAR
+is_read             BOOLEAN
+created_at          TIMESTAMP
+```
+
+Possible notifications:
+
+```text
+New Task
+Fee Updated
+Attendance Updated
+Profile Reminder
+```
+
+These are application notifications only.
+
+---
+
+# 32. Email Logs
+
+Only registration and approval emails.
+
+```text
+email_logs
+--------------------------------
+id                  BIGINT PK
+student_id          BIGINT NULL
+email               VARCHAR
+subject             VARCHAR
+email_type          ENUM(
+                        'STUDENT_REGISTRATION',
+                        'STUDENT_APPROVAL'
+                      )
+status              ENUM(
+                        'PENDING',
+                        'SENT',
+                        'FAILED'
+                      )
+sent_at             TIMESTAMP NULL
+error_message       TEXT NULL
+created_at          TIMESTAMP
+```
+
+---
+
+# 33. Final Database Relationship
+
+```text
+users
+  |
+  +─────────────── students
+                         |
+              +----------+----------+
+              |          |          |
+              ↓          ↓          ↓
+        institutions departments  fees
+                                      |
+                                      ↓
+                                  payments
+
+students
+   |
+   ├────────── attendance
+   |
+   ├────────── student_tasks
+   |                 ↑
+   |                 |
+   |               tasks
+   |                 |
+   |            task_targets
+   |
+   ├────────── notifications
+   |
+   └────────── email_logs
+```
+
+There is **NO tuition batches table**.
+
+Academic batch is stored/derived from:
+
+```text
+joining_year
+passing_year
+```
+
+---
+
+# 34. Student Dashboard
+
+Create:
+
+```text
+Hello, Arun 👋
+Welcome back to Future Tech
+
+┌──────────────────────────┐
+│ Attendance               │
+│                          │
+│          92%             │
+│                          │
+│ 🟢 Good attendance       │
+└──────────────────────────┘
+
+┌──────────────┐ ┌──────────────┐
+│ Fees         │ │ Tasks        │
+│ ₹8,000       │ │ 3            │
+│ 🟠 Pending   │ │ 🟠 Pending   │
+└──────────────┘ └──────────────┘
+```
+
+Student navigation:
+
+```text
+Home
+Tasks
+Fees
+Profile
+```
+
+---
+
+# 35. Student Profile
+
+Display:
+
+```text
+Profile Photo
+
+Name
+Email
+Phone
+
+Education
+Engineering
+
+College
+Kamaraj College of Engineering
+
+Department
+Computer Science and Engineering
+
+Academic Batch
+2023–2027
+
+Parent / Guardian
+Name
+Phone
+```
+
+---
+
+# 36. Student Fees Screen
+
+Example:
+
+```text
+My Fees
+
+Total Fee       ₹20,000
+Paid            ₹12,000
+Pending          ₹8,000
+
+Status:
+🟠 PARTIALLY PAID
+
+Payment History
+
+10 Sep 2026
+₹5,000
+UPI
+
+20 Sep 2026
+₹7,000
+Cash
+```
+
+No payment email.
+
+---
+
+# 37. Student Attendance Screen
+
+Example:
+
+```text
+Attendance
+
+Overall:
+92%
+
+September 2026
+
+01 Sep    🟢 Present
+02 Sep    🟢 Present
+03 Sep    🔴 Absent
+04 Sep    🟢 Present
+05 Sep    🟢 Present
+```
+
+Student cannot edit attendance.
+
+---
+
+# 38. Student Tasks Screen
+
+Example:
+
+```text
+Today's Tasks
+
+┌────────────────────────────┐
+│ Java Constructor Practice  │
+│                            │
+│ Complete questions 1–10    │
+│                            │
+│ Due: Today                 │
+│ 🟠 Pending                 │
+│                            │
+│ [ MARK IN PROGRESS ]       │
+└────────────────────────────┘
+```
+
+When completed:
+
+```text
+🟢 Completed
+```
+
+---
+
+# 39. Admin Dashboard
+
+Example:
+
+```text
+Future Tech
+Admin Dashboard
+
+Students
+428
+
+Institutions
+18
+
+Pending Requests
+5
+
+Fees Collected
+₹35.2 L
+
+Fees Pending
+₹7.3 L
+```
+
+Quick actions:
+
+```text
++ Add Student
++ Add Institution
++ Record Fee
++ Record Payment
++ Attendance
++ Create Task
+```
+
+---
+
+# 40. Admin Student Management
+
+Admin can search by:
+
+```text
+Name
+Student Code
+Email
+Phone
+College / School
+Department
+Academic Batch
+```
+
+Filters:
+
+```text
+Education Type
+Institution
+Department
+Academic Batch
+Status
+Fee Status
+```
+
+Example:
+
+```text
+Search:
+[ Arun ]
+
+Education:
+[ Engineering ▼ ]
+
+Department:
+[ CSE ▼ ]
+
+Academic Batch:
+[ 2023–2027 ▼ ]
+```
+
+---
+
+# 41. Admin Student Details
+
+When Admin opens a student:
+
+```text
+Student Profile
+
+Photo
+Name
+Student Code
+Email
+Phone
+
+Education:
+Engineering
+
+Institution:
+Kamaraj College
+
+Department:
+CSE
+
+Academic Batch:
+2023–2027
+
+Attendance:
+92%
+
+Fee:
+₹8,000 Pending
+
+Tasks:
+3 Pending
+```
+
+Provide actions:
+
+```text
+Edit
+Attendance
+Fees
+Payments
+Tasks
+Deactivate
+```
+
+---
+
+# 42. Authentication APIs
+
+```text
+POST /api/auth/register
+POST /api/auth/login
+POST /api/auth/refresh
+POST /api/auth/logout
+```
+
+---
+
+# 43. Student APIs
+
+```text
+GET /api/student/profile
+PUT /api/student/profile
+
+GET /api/student/dashboard
+
+GET /api/student/fees
+GET /api/student/payments
+
+GET /api/student/attendance
+
+GET /api/student/tasks
+GET /api/student/tasks/{id}
+
+PUT /api/student/tasks/{id}/status
+
+GET /api/student/notifications
+```
+
+---
+
+# 44. Admin APIs
+
+```text
+GET /api/admin/dashboard
+
+GET /api/admin/student-requests
+POST /api/admin/student-requests/{id}/approve
+POST /api/admin/student-requests/{id}/reject
+
+GET /api/admin/students
+GET /api/admin/students/{id}
+POST /api/admin/students
+PUT /api/admin/students/{id}
+DELETE /api/admin/students/{id}
+
+GET /api/admin/institutions
+POST /api/admin/institutions
+PUT /api/admin/institutions/{id}
+
+GET /api/admin/departments
+POST /api/admin/departments
+PUT /api/admin/departments/{id}
+
+POST /api/admin/attendance
+GET /api/admin/attendance
+
+POST /api/admin/fees
+GET /api/admin/fees
+
+POST /api/admin/payments
+GET /api/admin/payments
+
+POST /api/admin/tasks
+GET /api/admin/tasks
+GET /api/admin/tasks/{id}/students
+```
+
+---
+
+# 45. Backend Structure
+
+Use:
+
+```text
+com.futuretech
+│
+├── controller
+├── service
+├── repository
+├── entity
+├── dto
+├── mapper
+├── security
+├── exception
+├── email
+├── config
+└── util
+```
+
+Do not put business logic directly in controllers.
+
+---
+
+# 46. Security
+
+Use:
+
+```text
+Spring Security
++
+JWT
++
+BCrypt password hashing
+```
+
+Flow:
+
+```text
+Email + Password
+       ↓
+Spring Security
+       ↓
+Validate credentials
+       ↓
+JWT Token
+       ↓
+Flutter
+       ↓
+Secure Token Storage
+```
+
+Admin endpoints require:
+
+```text
+ROLE_ADMIN
+```
+
+Student endpoints require:
+
+```text
+ROLE_STUDENT
+```
+
+Students can only access their own data.
+
+---
+
+# 47. Validation
+
+Registration:
+
+```text
+Name required
+Email required
+Valid email
+Password required
+Password minimum 8 characters
+Institution required
+```
+
+Profile:
+
+```text
+Phone required
+Valid date of birth
+Education type required
+Institution required
+
+For college students:
+Department required
+Joining year required
+Passing year required
+```
+
+Academic validation:
+
+```text
+passing_year > joining_year
+```
+
+For example:
+
+```text
+2023 → 2027 ✓
+
+2027 → 2023 ✕
+```
+
+---
+
+# 48. Search and Filtering
+
+Since Future Tech can have many students, search must be efficient.
+
+Admin should be able to filter by:
+
+```text
+Institution
+Education Type
+Department
+Academic Batch
+Student Status
+Fee Status
+```
+
+Use database indexes for frequently searched fields.
+
+---
+
+# 49. Reports
+
+Admin should have:
+
+## Student Reports
+
+```text
+Total Students
+Active Students
+Inactive Students
+
+Institution-wise Students
+Department-wise Students
+Academic Batch-wise Students
+Education Type-wise Students
+```
+
+## Fee Reports
+
+```text
+Total Fees
+Collected Fees
+Pending Fees
+Paid Students
+Partially Paid Students
+Overdue Students
+```
+
+## Attendance Reports
+
+```text
+Overall Attendance
+Student Attendance
+Monthly Attendance
+Present Count
+Absent Count
+```
+
+## Task Reports
+
+```text
+Total Tasks
+Pending
+In Progress
+Completed
+```
+
+---
+
+# 50. Business Rules
+
+Implement these rules strictly:
+
+1. Only one Admin account is supported.
+2. Students must register before accessing the application.
+3. New students must wait for Admin approval.
+4. Students cannot login to the full application before approval.
+5. Students must complete their profile after approval.
+6. Students cannot modify fees.
+7. Students cannot modify payments.
+8. Students cannot modify attendance.
+9. Students cannot access another student's private information.
+10. Students can update their own task status.
+11. Admin can manage all students.
+12. Admin can manage institutions.
+13. Admin can manage departments.
+14. Admin can create fee records.
+15. Admin can record payments.
+16. Admin can mark attendance.
+17. Admin can create daily tasks.
+18. Academic batch means joining year–passing year.
+19. There is no tuition class batch.
+20. Engineering example: 2023–2027.
+21. Arts/Science example: 2023–2026.
+22. School students use class/standard, section, and academic year.
+23. Passing year must be greater than joining year.
+24. Duplicate email registrations must be prevented.
+25. Duplicate attendance for the same student/date must be prevented.
+26. Passwords must never be stored in plain text.
+27. Resend API credentials must never be exposed in Flutter.
+28. Email is only required for registration and approval.
+29. No email is required for fees.
+30. No email is required for tasks.
+31. No email is required for attendance.
+
+---
+
+# 51. Development Phases
+
+Build the project in this order.
+
+## Phase 1 — Database
+
+Create:
+
+```text
+users
+students
+institutions
+departments
+fee_records
+payments
+attendance
+tasks
+task_targets
+student_tasks
+notifications
+email_logs
+```
+
+Add:
+
+* Primary keys
+* Foreign keys
+* Unique constraints
+* Indexes
+* Required validations
+
+---
+
+## Phase 2 — Spring Boot Backend
+
+Build:
+
+```text
+Entities
+Repositories
+DTOs
+Services
+Controllers
+Exception handling
+```
+
+---
+
+## Phase 3 — Authentication
+
+Implement:
+
+```text
+Admin Login
+Student Registration
+Student Login
+JWT
+Role Authorization
+Password Hashing
+```
+
+---
+
+## Phase 4 — Approval Flow
+
+Implement:
+
+```text
+Student Registration
+       ↓
+Pending Approval
+       ↓
+Admin Review
+       ↓
+Accept / Reject
+       ↓
+Student Approval Email
+```
+
+---
+
+## Phase 5 — Student Profile
+
+Implement:
+
+```text
+Personal Information
+Education Information
+Institution
+Department
+Joining Year
+Passing Year
+Academic Batch
+```
+
+---
+
+## Phase 6 — Fees
+
+Implement:
+
+```text
+Fee Creation
+Payment Recording
+Payment History
+Pending Calculation
+Fee Status
+```
+
+---
+
+## Phase 7 — Attendance
+
+Implement:
+
+```text
+Student Attendance
+Daily Attendance
+Attendance Percentage
+Monthly History
+```
+
+---
+
+## Phase 8 — Tasks
+
+Implement:
+
+```text
+Create Task
+Target Students
+Target Institution
+Target Department
+Target Academic Batch
+Student Task Status
+```
+
+---
+
+## Phase 9 — Email
+
+Integrate Resend.
+
+Only:
+
+```text
+Registration → Admin
+Approval → Student
+```
+
+---
+
+## Phase 10 — Flutter
+
+Build:
+
+```text
+Splash
+Login
+Registration
+Approval Waiting
+Profile Completion
+Student Dashboard
+Student Fees
+Student Attendance
+Student Tasks
+Student Profile
+
+Admin Dashboard
+Student Requests
+Students
+Institutions
+Departments
+Attendance
+Fees
+Payments
+Tasks
+Reports
+Settings
+```
+
+---
+
+# 52. Final Architecture
+
+```text
+                         FUTURE TECH
+                              |
+             +----------------+----------------+
+             |                                 |
+          Flutter                         Spring Boot
+             |                                 |
+             | REST API                       |
+             +------------------------------->|
+                                               |
+                              +----------------+----------------+
+                              |                |               |
+                            MySQL           JWT/Security      Resend
+                              |                                |
+                              |                         Registration
+                              |                         Approval Email
+                              |
+              +---------------+----------------+
+              |               |                |
+           Students          Fees          Attendance
+              |               |
+              |            Payments
+              |
+          Academic Data
+              |
+       +------+------+------+
+       |      |      |      |
+   Institution Dept Joining Passing
+                       Year   Year
+                              |
+                              ↓
+                     Academic Batch
+                       2023–2027
+```
+
+---
+
+# 53. Most Important Requirement
+
+Do not misunderstand the concept of **Batch**.
+
+For Future Tech:
+
+```text
+Batch ≠ Tuition Class
+Batch ≠ Time Slot
+Batch ≠ Staff Group
+```
+
+Instead:
+
+```text
+Academic Batch = Joining Year – Passing Year
+```
+
+Examples:
+
+```text
+Engineering
+2023–2027
+
+Arts & Science
+2023–2026
+```
+
+Use this academic batch for:
+
+* Student filtering
+* Student search
+* Reports
+* Task targeting
+* Student profile
+* Academic information
+
+Do not create a tuition-class `batches` table.
+
+---
+
+# 54. Final Product Goal
+
+Future Tech should provide a simple centralized system where:
+
+```text
+Students
+    ↓
+Register
+    ↓
+Admin Approval
+    ↓
+Complete Personal + Academic Profile
+    ↓
+Use Future Tech
+    ↓
+View
+    ├── Attendance
+    ├── Fees
+    ├── Payments
+    └── Daily Tasks
+```
+
+And the single Admin can:
+
+```text
+Admin
+  ↓
+Dashboard
+  ↓
+Manage Students
+  ↓
+Manage Institutions
+  ↓
+Manage Departments
+  ↓
+Manage Attendance
+  ↓
+Manage Fees & Payments
+  ↓
+Create Daily Tasks
+  ↓
+View Reports
+```
+
+Build **Future Tech** as a real-world maintainable application, not as a simple demo project. Prioritize correct database relationships, security, validation, role-based access control, clean API design, and a consistent Green + Orange UI.
