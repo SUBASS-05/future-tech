@@ -1,2 +1,2 @@
 package com.futuretech.entity.enums;
-public enum EducationType { SCHOOL, ENGINEERING, ARTS_SCIENCE, POLYTECHNIC, OTHER }
+public enum EducationType { SCHOOL, COLLEGE, ENGINEERING, ARTS_SCIENCE, POLYTECHNIC, OTHER }

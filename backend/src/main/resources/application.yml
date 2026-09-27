@@ -8,7 +8,7 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/future_tech?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
-    password: root # Replace with secure password
+    password: root 
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:

@@ -5,5 +5,6 @@ import lombok.Data;
 public class AuthResponse {
     private String token;
     private String userType;
+    private String profileStatus;
     private String message;
 }

@@ -33,6 +33,7 @@ com\futuretech\entity\TaskTarget.class
 com\futuretech\repository\EmailLogRepository.class
 com\futuretech\controller\AuthController.class
 com\futuretech\FuturetechApplication.class
+com\futuretech\config\CorsConfig.class
 com\futuretech\controller\AdminTaskController.class
 com\futuretech\service\impl\AttendanceServiceImpl.class
 com\futuretech\config\AsyncConfig.class
@@ -48,6 +49,7 @@ com\futuretech\entity\enums\PaymentMethod.class
 com\futuretech\dto\TaskRequest.class
 com\futuretech\entity\Student.class
 com\futuretech\security\CustomUserDetailsService.class
+com\futuretech\exception\GlobalExceptionHandler.class
 com\futuretech\entity\User$UserBuilder.class
 com\futuretech\entity\Institution.class
 com\futuretech\repository\StudentRepository.class
@@ -87,5 +89,6 @@ com\futuretech\service\AdminService.class
 com\futuretech\entity\enums\TargetType.class
 com\futuretech\service\impl\AdminServiceImpl.class
 com\futuretech\repository\InstitutionRepository.class
+com\futuretech\dto\StudentProfileUpdateDTO.class
 com\futuretech\entity\enums\EducationType.class
 com\futuretech\config\SecurityConfig.class

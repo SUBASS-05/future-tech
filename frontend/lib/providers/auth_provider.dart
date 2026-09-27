@@ -9,55 +9,71 @@ class AuthProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   String? _role;
+  String? _profileStatus;
 
   bool get isLoading => _isLoading;
   String? get error => _error;
   String? get role => _role;
+  String? get profileStatus => _profileStatus;
 
   bool get isAuthenticated => _role != null;
 
   Future<void> checkAuthStatus() async {
     final token = await SecureStorage.getToken();
     final userRole = await SecureStorage.getRole();
+    final pStatus = await SecureStorage.getProfileStatus();
+    
     if (token != null && userRole != null) {
       _role = userRole;
+      _profileStatus = pStatus ?? 'COMPLETED'; 
       notifyListeners();
     }
   }
 
-  Future<bool> login(String email, String password) async {
+  Future<String?> login(String email, String password, String role) async {
     _setLoading(true);
     try {
       final response = await _apiService.post('/auth/login', {
         'email': email,
         'password': password,
+        'role': role,
       });
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final token = data['token'];
-        final userRole = data['role']; // ADMIN or STUDENT
+        final userRole = data['userType']; // Match the backend AuthResponse DTO
+        final profileStatus = data['profileStatus'] ?? 'COMPLETED';
 
         await SecureStorage.saveToken(token);
         await SecureStorage.saveRole(userRole);
-        
+        await SecureStorage.saveProfileStatus(profileStatus);
+
         _role = userRole;
+        _profileStatus = profileStatus;
         _error = null;
         _setLoading(false);
-        return true;
+        
+        return profileStatus; 
       } else {
         _error = jsonDecode(response.body)['message'] ?? 'Login failed';
         _setLoading(false);
-        return false;
+        return null;
       }
     } catch (e) {
-      _error = 'Connection error. Please try again.';
+      _error = 'Connection error: $e';
       _setLoading(false);
-      return false;
+      return null;
     }
   }
 
-  Future<bool> registerStudent(String fullName, String email, String password, String institutionName) async {
+  void markProfileCompleted() {
+    _profileStatus = 'COMPLETED';
+    SecureStorage.saveProfileStatus('COMPLETED');
+    notifyListeners();
+  }
+
+  Future<bool> registerStudent(String fullName, String email, String password, String institutionName, String role) async {
     _setLoading(true);
     try {
       final response = await _apiService.post('/auth/register', {
@@ -65,6 +81,7 @@ class AuthProvider with ChangeNotifier {
         'email': email,
         'password': password,
         'institutionName': institutionName,
+        'role': role,
       });
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -77,7 +94,7 @@ class AuthProvider with ChangeNotifier {
         return false;
       }
     } catch (e) {
-      _error = 'Connection error. Please try again.';
+      _error = 'Connection error: $e';
       _setLoading(false);
       return false;
     }

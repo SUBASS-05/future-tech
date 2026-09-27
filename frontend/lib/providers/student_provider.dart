@@ -38,6 +38,26 @@ class StudentProvider with ChangeNotifier {
     } catch (e) { print(e); }
   }
 
+  Future<String?> updateProfile(Map<String, dynamic> profileData) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final response = await _apiService.put('/student/profile', profileData);
+      _isLoading = false;
+      notifyListeners();
+      
+      if (response.statusCode == 200) {
+        return null; // Success (no error string)
+      } else {
+        return jsonDecode(response.body)['message'] ?? 'Failed to update profile';
+      }
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return 'Connection error: $e';
+    }
+  }
+
   Future<void> fetchTasks() async {
     try {
       final response = await _apiService.get('/student/tasks');

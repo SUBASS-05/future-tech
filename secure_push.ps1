@@ -18,7 +18,7 @@ git add .
 
 # Commit (allow empty in case they already committed somehow, though unlikely)
 try {
-    git commit -m "Initial commit: Future Tech (Phase 1 to 10)"
+    git commit -m "Update UI theme and fix backend enum"
 } catch {
     Write-Host "Nothing to commit or commit failed."
 }

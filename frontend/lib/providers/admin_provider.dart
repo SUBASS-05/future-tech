@@ -1,4 +1,3 @@
-package:flutter/material.dart;
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../core/api/api_service.dart';
@@ -15,7 +14,7 @@ class AdminProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final response = await _apiService.get('/admin/requests/pending');
+      final response = await _apiService.get('/admin/student-requests');
       if (response.statusCode == 200) {
         _pendingRequests = jsonDecode(response.body);
       }
@@ -26,7 +25,7 @@ class AdminProvider with ChangeNotifier {
 
   Future<bool> approveStudent(int studentId) async {
     try {
-      final response = await _apiService.post('/admin/requests/$studentId/approve', {});
+      final response = await _apiService.post('/admin/student-requests/$studentId/approve', {});
       if (response.statusCode == 200) {
         await fetchPendingRequests();
         return true;
@@ -37,7 +36,7 @@ class AdminProvider with ChangeNotifier {
 
   Future<bool> rejectStudent(int studentId) async {
     try {
-      final response = await _apiService.post('/admin/requests/$studentId/reject', {});
+      final response = await _apiService.post('/admin/student-requests/$studentId/reject', {});
       if (response.statusCode == 200) {
         await fetchPendingRequests();
         return true;

@@ -34,51 +34,68 @@ public class AuthServiceImpl implements AuthService {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email is already registered.");
         }
+        
+        boolean isAdmin = "ADMIN".equalsIgnoreCase(request.getRole());
 
         User user = User.builder()
                 .name(request.getFullName())
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
-                .userType(UserType.STUDENT)
+                .userType(isAdmin ? UserType.ADMIN : UserType.STUDENT)
                 .isActive(true)
                 .build();
         user = userRepository.save(user);
 
-        Institution tempInstitution = new Institution();
-        tempInstitution.setInstitutionName(request.getInstitutionName());
-        tempInstitution.setInstitutionType(InstitutionType.COLLEGE); // Default to college for now
-        tempInstitution = institutionRepository.save(tempInstitution);
+        if (!isAdmin) {
+            Institution tempInstitution = new Institution();
+            tempInstitution.setInstitutionName(request.getInstitutionName());
+            tempInstitution.setInstitutionType(InstitutionType.COLLEGE); // Default to college for now
+            tempInstitution = institutionRepository.save(tempInstitution);
 
-        Student student = Student.builder()
-                .user(user)
-                .studentCode("FT-" + UUID.randomUUID().toString().substring(0,8).toUpperCase())
-                .firstName(request.getFullName())
-                .institution(tempInstitution)
-                .status(StudentStatus.PENDING_APPROVAL)
-                .profileStatus(ProfileStatus.INCOMPLETE)
-                .build();
-        studentRepository.save(student);
+            Student student = Student.builder()
+                    .user(user)
+                    .studentCode("FT-" + UUID.randomUUID().toString().substring(0,8).toUpperCase())
+                    .firstName(request.getFullName())
+                    .institution(tempInstitution)
+                    .status(StudentStatus.PENDING_APPROVAL)
+                    .profileStatus(ProfileStatus.INCOMPLETE)
+                    .build();
+            studentRepository.save(student);
 
-        emailService.sendRegistrationNotificationToAdmin(student);
+            // Temporarily disabled email process
+            // emailService.sendRegistrationNotificationToAdmin(student);
+            
+            return new MessageResponse("Registration Successful. Please wait for Admin approval.");
+        }
 
-        return new MessageResponse("Registration Successful. Please wait for Admin approval.");
+        return new MessageResponse("Admin Registration Successful. You can log in immediately.");
     }
 
     @Override
     public AuthResponse login(AuthRequest request) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
         User user = userRepository.findByEmail(request.getEmail()).orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Enforce role check if role is provided
+        if (request.getRole() != null && !request.getRole().isEmpty()) {
+            if (!user.getUserType().name().equalsIgnoreCase(request.getRole())) {
+                throw new RuntimeException("Login failed: Selected role does not match user account type.");
+            }
+        }
 
         if (user.getUserType() == UserType.STUDENT) {
             Student student = studentRepository.findByUserId(user.getId()).orElseThrow(() -> new RuntimeException("Student profile not found"));
             if (student.getStatus() != StudentStatus.APPROVED && student.getStatus() != StudentStatus.ACTIVE) {
                 throw new RuntimeException("Account is not approved yet. Status: " + student.getStatus());
             }
+            UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
+            String token = jwtUtil.generateToken(userDetails);
+            return new AuthResponse(token, user.getUserType().name(), student.getProfileStatus().name(), "Login successful");
         }
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
         String token = jwtUtil.generateToken(userDetails);
 
-        return new AuthResponse(token, user.getUserType().name(), "Login successful");
+        return new AuthResponse(token, user.getUserType().name(), "COMPLETED", "Login successful");
     }
 }

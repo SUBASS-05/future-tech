@@ -15,6 +15,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _institutionController = TextEditingController();
+  String _selectedRole = 'STUDENT';
 
   Future<void> _register() async {
     if (_formKey.currentState!.validate()) {
@@ -25,6 +26,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _emailController.text.trim(),
         _passwordController.text,
         _institutionController.text.trim(),
+        _selectedRole,
       );
 
       if (mounted) {
@@ -110,16 +112,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       (value == null || value.length < 6) ? 'Password must be at least 6 characters' : null,
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
-                  controller: _institutionController,
+                DropdownButtonFormField<String>(
+                  value: _selectedRole,
                   decoration: const InputDecoration(
-                    labelText: 'Institution Name (College/School)',
-                    prefixIcon: Icon(Icons.business),
+                    labelText: 'Register as',
+                    prefixIcon: Icon(Icons.people),
                     border: OutlineInputBorder(),
                   ),
-                  validator: (value) => 
-                      (value == null || value.isEmpty) ? 'Please enter your institution name' : null,
+                  items: const [
+                    DropdownMenuItem(value: 'STUDENT', child: Text('Student')),
+                    DropdownMenuItem(value: 'ADMIN', child: Text('Admin')),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedRole = value!;
+                    });
+                  },
                 ),
+                if (_selectedRole == 'STUDENT') ...[
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _institutionController,
+                    decoration: const InputDecoration(
+                      labelText: 'Institution Name (College/School)',
+                      prefixIcon: Icon(Icons.business),
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) => 
+                        (value == null || value.isEmpty) ? 'Please enter your institution name' : null,
+                  ),
+                ],
                 const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: isLoading ? null : _register,

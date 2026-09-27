@@ -13,6 +13,7 @@ D:\future tech\backend\src\main\java\com\futuretech\service\impl\AdminServiceImp
 D:\future tech\backend\src\main\java\com\futuretech\dto\StudentRequestDTO.java
 D:\future tech\backend\src\main\java\com\futuretech\controller\StudentFeatureController.java
 D:\future tech\backend\src\main\java\com\futuretech\entity\Payment.java
+D:\future tech\backend\src\main\java\com\futuretech\exception\GlobalExceptionHandler.java
 D:\future tech\backend\src\main\java\com\futuretech\controller\StudentController.java
 D:\future tech\backend\src\main\java\com\futuretech\dto\RegisterRequest.java
 D:\future tech\backend\src\main\java\com\futuretech\security\CustomUserDetailsService.java
@@ -59,6 +60,7 @@ D:\future tech\backend\src\main\java\com\futuretech\dto\StudentProfileDTO.java
 D:\future tech\backend\src\main\java\com\futuretech\entity\TaskTarget.java
 D:\future tech\backend\src\main\java\com\futuretech\service\impl\TaskServiceImpl.java
 D:\future tech\backend\src\main\java\com\futuretech\entity\enums\TaskStatus.java
+D:\future tech\backend\src\main\java\com\futuretech\dto\StudentProfileUpdateDTO.java
 D:\future tech\backend\src\main\java\com\futuretech\service\impl\AuthServiceImpl.java
 D:\future tech\backend\src\main\java\com\futuretech\service\EmailService.java
 D:\future tech\backend\src\main\java\com\futuretech\repository\DepartmentRepository.java
@@ -73,5 +75,6 @@ D:\future tech\backend\src\main\java\com\futuretech\config\SecurityConfig.java
 D:\future tech\backend\src\main\java\com\futuretech\security\JwtUtil.java
 D:\future tech\backend\src\main\java\com\futuretech\config\DataSeeder.java
 D:\future tech\backend\src\main\java\com\futuretech\entity\FeeRecord.java
+D:\future tech\backend\src\main\java\com\futuretech\config\CorsConfig.java
 D:\future tech\backend\src\main\java\com\futuretech\dto\UpdateProfileRequest.java
 D:\future tech\backend\src\main\java\com\futuretech\service\impl\EmailServiceImpl.java

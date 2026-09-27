@@ -38,7 +38,8 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new RuntimeException("Student not found"));
         student.setStatus(StudentStatus.APPROVED);
         studentRepository.save(student);
-        emailService.sendApprovalNotificationToStudent(student);
+        // Temporarily disabled email process
+        // emailService.sendApprovalNotificationToStudent(student);
         return new MessageResponse("Student approved successfully");
     }
 

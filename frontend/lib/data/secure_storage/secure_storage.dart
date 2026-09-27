@@ -5,6 +5,7 @@ class SecureStorage {
 
   static const _keyToken = 'jwt_token';
   static const _keyRole = 'user_role';
+  static const _keyProfileStatus = 'profile_status';
 
   static Future<void> saveToken(String token) async {
     await _storage.write(key: _keyToken, value: token);
@@ -20,6 +21,14 @@ class SecureStorage {
 
   static Future<String?> getRole() async {
     return await _storage.read(key: _keyRole);
+  }
+
+  static Future<void> saveProfileStatus(String status) async {
+    await _storage.write(key: _keyProfileStatus, value: status);
+  }
+
+  static Future<String?> getProfileStatus() async {
+    return await _storage.read(key: _keyProfileStatus);
   }
 
   static Future<void> clearAll() async {

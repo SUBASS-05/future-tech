@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../../data/secure_storage/secure_storage.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://10.0.2.2:8080/api'; // Android emulator localhost
+  static const String baseUrl = 'http://127.0.0.1:8080/api'; // Use 127.0.0.1 specifically for Windows/Chrome
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await SecureStorage.getToken();

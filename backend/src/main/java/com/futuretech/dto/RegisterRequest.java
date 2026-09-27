@@ -6,4 +6,5 @@ public class RegisterRequest {
     private String email;
     private String password;
     private String institutionName;
+    private String role;
 }
