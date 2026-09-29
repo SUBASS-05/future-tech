@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'core/theme/design_system.dart';
 import 'providers/auth_provider.dart';
 import 'providers/admin_provider.dart';
 import 'providers/student_provider.dart';
@@ -25,51 +26,7 @@ class FutureTechApp extends StatelessWidget {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Future Tech',
-        theme: ThemeData(
-          colorScheme: const ColorScheme.light(
-            primary: Color(0xFF2557A7), // Indeed Blue
-            secondary: Color(0xFF2D2D2D), // Dark text/accents
-            surface: Colors.white,
-            onPrimary: Colors.white,
-            onSecondary: Colors.white,
-            onSurface: Color(0xFF2D2D2D),
-          ),
-          scaffoldBackgroundColor: const Color(0xFFF3F2F1), // Indeed light gray background
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Colors.white,
-            foregroundColor: Color(0xFF2D2D2D),
-            elevation: 1,
-            centerTitle: false,
-            iconTheme: IconThemeData(color: Color(0xFF2D2D2D)),
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2557A7),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-              elevation: 0,
-            ),
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.0),
-              borderSide: const BorderSide(color: Colors.grey),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.0),
-              borderSide: BorderSide(color: Colors.grey.shade400),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.0),
-              borderSide: const BorderSide(color: Color(0xFF2557A7), width: 2),
-            ),
-          ),
-          useMaterial3: true,
-        ),
+        theme: FTTheme.lightTheme,
         home: const AuthWrapper(),
       ),
     );
@@ -85,7 +42,7 @@ class AuthWrapper extends StatelessWidget {
 
     // Basic routing logic
     if (authProvider.isAuthenticated) {
-      if (authProvider.role == 'ADMIN') {
+      if (authProvider.role == 'ADMIN' || authProvider.role == 'TOP_ADMIN') {
         return const AdminDashboard();
       } else {
         return const StudentDashboard();

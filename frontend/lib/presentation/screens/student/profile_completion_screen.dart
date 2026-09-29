@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../providers/student_provider.dart';
 import '../../../providers/auth_provider.dart';
-
+import '../../../presentation/widgets/components.dart';
+import '../../../core/theme/design_system.dart';
+import '../../../data/secure_storage/secure_storage.dart';
 class ProfileCompletionScreen extends StatefulWidget {
   const ProfileCompletionScreen({super.key});
 
@@ -36,7 +38,6 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
   int? _selectedInstitutionId;
   int? _selectedDepartmentId;
   
-  final _schoolController = TextEditingController();
   final _departmentNameController = TextEditingController();
   final _classStandardController = TextEditingController();
   final _sectionController = TextEditingController();
@@ -54,8 +55,19 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
   @override
   void initState() {
     super.initState();
+    _loadEmailFromStorage();
     _loadData();
   }
+
+  // Loads the email immediately from secure storage (saved at login)
+  // so the field never shows a placeholder while waiting for the profile API
+  Future<void> _loadEmailFromStorage() async {
+    final email = await SecureStorage.getEmail();
+    if (email != null && mounted) {
+      setState(() => _email = email);
+    }
+  }
+
 
   Future<void> _loadData() async {
     final studentProvider = context.read<StudentProvider>();
@@ -227,16 +239,10 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
                 const SizedBox(height: 16),
                 _buildCard("Parent / Guardian Information", _buildParentSection()),
                 const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: isLoading ? null : _submitProfile,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Save Profile', style: TextStyle(fontSize: 18)),
+                FTButton(
+                  onPressed: _submitProfile,
+                  text: 'Save Profile',
+                  isLoading: isLoading,
                 ),
               ],
             ),
@@ -247,20 +253,15 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
   }
   
   Widget _buildCard(String title, Widget content) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green)),
-            const Divider(),
-            const SizedBox(height: 8),
-            content,
-          ],
-        ),
+    return FTCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: FTTypography.heading3.copyWith(color: FTColors.primary)),
+          const Divider(color: FTColors.border),
+          const SizedBox(height: FTSpacing.sm),
+          content,
+        ],
       ),
     );
   }
@@ -270,90 +271,84 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
       children: [
         if (_studentCode != null)
           Padding(
-            padding: const EdgeInsets.only(bottom: 16.0),
-            child: Text("Student ID: $_studentCode", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            padding: const EdgeInsets.only(bottom: FTSpacing.md),
+            child: Text("Student ID: $_studentCode", style: FTTypography.bodyLarge.copyWith(fontWeight: FontWeight.bold)),
           ),
-        TextFormField(
-          initialValue: _email ?? 'student@example.com',
+        FTTextField(
+          initialValue: _email ?? '',
           readOnly: true,
-          decoration: const InputDecoration(
-            labelText: 'Email (Cannot be changed)',
-            border: OutlineInputBorder(),
-            filled: true,
-            fillColor: Colors.black12,
-          ),
+          label: 'Email (Cannot be changed)',
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: FTSpacing.md),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: TextFormField(
+              child: FTTextField(
                 controller: _firstNameController,
-                decoration: const InputDecoration(labelText: 'First Name', border: OutlineInputBorder()),
+                label: 'First Name',
                 validator: (v) => v!.isEmpty ? 'Required' : null,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: FTSpacing.md),
             Expanded(
-              child: TextFormField(
+              child: FTTextField(
                 controller: _lastNameController,
-                decoration: const InputDecoration(labelText: 'Last Name', border: OutlineInputBorder()),
+                label: 'Last Name',
                 validator: (v) => v!.isEmpty ? 'Required' : null,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        TextFormField(
+        const SizedBox(height: FTSpacing.md),
+        FTTextField(
           controller: _dobController,
           readOnly: true,
-          decoration: InputDecoration(
-            labelText: 'Date of Birth',
-            border: const OutlineInputBorder(),
-            suffixIcon: IconButton(
-              icon: const Icon(Icons.calendar_today),
-              onPressed: () => _selectDate(context),
-            ),
+          label: 'Date of Birth',
+          suffixIcon: IconButton(
+            icon: const Icon(Icons.calendar_today),
+            onPressed: () => _selectDate(context),
           ),
           validator: (v) => v!.isEmpty ? 'Required' : null,
         ),
-        const SizedBox(height: 16),
-        DropdownButtonFormField<String>(
+        const SizedBox(height: FTSpacing.md),
+        FTDropdown<String>(
           value: _selectedGender,
-          decoration: const InputDecoration(labelText: 'Gender', border: OutlineInputBorder()),
+          label: 'Gender',
           items: ['Male', 'Female', 'Other', 'Prefer not to say']
               .map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
           onChanged: (v) => setState(() => _selectedGender = v),
           validator: (v) => v == null ? 'Required' : null,
         ),
-        const SizedBox(height: 16),
-        TextFormField(
+        const SizedBox(height: FTSpacing.md),
+        FTTextField(
           controller: _phoneController,
-          decoration: const InputDecoration(labelText: 'Phone Number', border: OutlineInputBorder()),
+          label: 'Phone Number',
           keyboardType: TextInputType.phone,
           validator: (v) => v!.isEmpty ? 'Required' : null,
         ),
-        const SizedBox(height: 16),
-        TextFormField(
+        const SizedBox(height: FTSpacing.md),
+        FTTextField(
           controller: _addressController,
           maxLines: 3,
-          decoration: const InputDecoration(labelText: 'Address', border: OutlineInputBorder()),
+          label: 'Address',
           validator: (v) => v!.isEmpty ? 'Required' : null,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: FTSpacing.md),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: TextFormField(
+              child: FTTextField(
                 controller: _cityController,
-                decoration: const InputDecoration(labelText: 'City', border: OutlineInputBorder()),
+                label: 'City',
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: FTSpacing.md),
             Expanded(
-              child: TextFormField(
+              child: FTTextField(
                 controller: _pincodeController,
-                decoration: const InputDecoration(labelText: 'Pincode', border: OutlineInputBorder()),
+                label: 'Pincode',
               ),
             ),
           ],
@@ -365,9 +360,9 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
   Widget _buildAcademicSection() {
     return Column(
       children: [
-        DropdownButtonFormField<String>(
+        FTDropdown<String>(
           value: _selectedEducationType,
-          decoration: const InputDecoration(labelText: 'Education Type', border: OutlineInputBorder()),
+          label: 'Education Type',
           items: const [
             DropdownMenuItem(value: 'SCHOOL', child: Text('School')),
             DropdownMenuItem(value: 'ENGINEERING', child: Text('Engineering')),
@@ -378,11 +373,11 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
           onChanged: (v) => setState(() => _selectedEducationType = v),
           validator: (v) => v == null ? 'Required' : null,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: FTSpacing.md),
         if (_selectedEducationType != null && _selectedEducationType != 'SCHOOL') ...[
-          DropdownButtonFormField<int>(
+          FTDropdown<int>(
             value: _selectedInstitutionId,
-            decoration: const InputDecoration(labelText: 'College', border: OutlineInputBorder()),
+            label: 'College',
             items: _institutions.map((i) => DropdownMenuItem<int>(value: i['id'], child: Text(i['institutionName']))).toList(),
             onChanged: (v) {
               setState(() {
@@ -392,57 +387,56 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
             },
             validator: (v) => v == null ? 'Required' : null,
           ),
-          const SizedBox(height: 16),
-          TextFormField(
+          const SizedBox(height: FTSpacing.md),
+          FTTextField(
             controller: _departmentNameController,
-            decoration: const InputDecoration(labelText: 'Department', border: OutlineInputBorder()),
+            label: 'Department',
             validator: (v) => v!.isEmpty ? 'Required' : null,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: FTSpacing.md),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _joiningYearController.text.isNotEmpty ? _joiningYearController.text : null,
-                  decoration: const InputDecoration(labelText: 'Joining Year', border: OutlineInputBorder()),
-                  items: List.generate(20, (i) => (DateTime.now().year - 10 + i).toString())
-                      .map((y) => DropdownMenuItem(value: y, child: Text(y))).toList(),
-                  onChanged: (v) => setState(() => _joiningYearController.text = v!),
-                  validator: (v) => v == null ? 'Required' : null,
+                child: FTTextField(
+                  controller: _joiningYearController,
+                  label: 'Joining Year',
+                  hint: 'e.g. 2022',
+                  keyboardType: TextInputType.number,
+                  validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: FTSpacing.md),
               Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _passingYearController.text.isNotEmpty ? _passingYearController.text : null,
-                  decoration: const InputDecoration(labelText: 'Passing Year', border: OutlineInputBorder()),
-                  items: List.generate(20, (i) => (DateTime.now().year - 10 + i).toString())
-                      .map((y) => DropdownMenuItem(value: y, child: Text(y))).toList(),
-                  onChanged: (v) => setState(() => _passingYearController.text = v!),
-                  validator: (v) => v == null ? 'Required' : null,
+                child: FTTextField(
+                  controller: _passingYearController,
+                  label: 'Passing Year',
+                  hint: 'e.g. 2026',
+                  keyboardType: TextInputType.number,
+                  validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: FTSpacing.md),
           Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(4)),
+            padding: const EdgeInsets.all(FTSpacing.md),
+            decoration: BoxDecoration(border: Border.all(color: FTColors.border), borderRadius: BorderRadius.circular(FTRadius.small)),
             width: double.infinity,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Academic Batch', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                const SizedBox(height: 4),
-                Text(_calculatedBatch.isEmpty ? 'Automatically calculated' : _calculatedBatch, style: const TextStyle(fontSize: 16)),
+                Text('Academic Batch', style: FTTypography.caption.copyWith(color: FTColors.textSecondary)),
+                const SizedBox(height: FTSpacing.xs),
+                Text(_calculatedBatch.isEmpty ? 'Automatically calculated' : _calculatedBatch, style: FTTypography.bodyLarge),
               ],
             ),
           )
         ],
         if (_selectedEducationType == 'SCHOOL') ...[
-          DropdownButtonFormField<int>(
+          FTDropdown<int>(
             value: _selectedInstitutionId,
-            decoration: const InputDecoration(labelText: 'School', border: OutlineInputBorder()),
+            label: 'School',
             items: _institutions.map((i) => DropdownMenuItem<int>(value: i['id'], child: Text(i['institutionName']))).toList(),
             onChanged: (v) {
               setState(() {
@@ -451,16 +445,16 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
             },
             validator: (v) => v == null ? 'Required' : null,
           ),
-          const SizedBox(height: 16),
-          TextFormField(
+          const SizedBox(height: FTSpacing.md),
+          FTTextField(
             controller: _classStandardController,
-            decoration: const InputDecoration(labelText: 'Class / Standard', border: OutlineInputBorder()),
+            label: 'Class / Standard',
             validator: (v) => v!.isEmpty ? 'Required' : null,
           ),
-          const SizedBox(height: 16),
-          TextFormField(
+          const SizedBox(height: FTSpacing.md),
+          FTTextField(
             controller: _academicYearController,
-            decoration: const InputDecoration(labelText: 'Academic Year', border: OutlineInputBorder()),
+            label: 'Academic Year',
           ),
         ]
       ],
@@ -470,31 +464,31 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
   Widget _buildParentSection() {
     return Column(
       children: [
-        TextFormField(
+        FTTextField(
           controller: _parentNameController,
-          decoration: const InputDecoration(labelText: 'Parent / Guardian Name', border: OutlineInputBorder()),
+          label: 'Parent / Guardian Name',
           validator: (v) => v!.isEmpty ? 'Required' : null,
         ),
-        const SizedBox(height: 16),
-        DropdownButtonFormField<String>(
+        const SizedBox(height: FTSpacing.md),
+        FTDropdown<String>(
           value: _selectedRelationship,
-          decoration: const InputDecoration(labelText: 'Relationship', border: OutlineInputBorder()),
+          label: 'Relationship',
           items: ['Father', 'Mother', 'Guardian', 'Other']
               .map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
           onChanged: (v) => setState(() => _selectedRelationship = v),
           validator: (v) => v == null ? 'Required' : null,
         ),
-        const SizedBox(height: 16),
-        TextFormField(
+        const SizedBox(height: FTSpacing.md),
+        FTTextField(
           controller: _parentPhoneController,
-          decoration: const InputDecoration(labelText: 'Phone Number', border: OutlineInputBorder()),
+          label: 'Phone Number',
           keyboardType: TextInputType.phone,
           validator: (v) => v!.isEmpty ? 'Required' : null,
         ),
-        const SizedBox(height: 16),
-        TextFormField(
+        const SizedBox(height: FTSpacing.md),
+        FTTextField(
           controller: _altParentPhoneController,
-          decoration: const InputDecoration(labelText: 'Alternative Phone Number', border: OutlineInputBorder()),
+          label: 'Alternative Phone Number',
           keyboardType: TextInputType.phone,
         ),
       ],

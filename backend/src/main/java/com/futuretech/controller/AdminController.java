@@ -19,6 +19,11 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getPendingRequests());
     }
 
+    @GetMapping("/students")
+    public ResponseEntity<List<StudentRequestDTO>> getApprovedStudents() {
+        return ResponseEntity.ok(adminService.getApprovedStudents());
+    }
+
     @PostMapping("/student-requests/{id}/approve")
     public ResponseEntity<MessageResponse> approveStudent(@PathVariable Long id) {
         return ResponseEntity.ok(adminService.approveStudent(id));

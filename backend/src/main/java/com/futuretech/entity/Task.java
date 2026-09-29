@@ -1,7 +1,11 @@
 package com.futuretech.entity;
+
+import com.futuretech.entity.enums.TaskPriority;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.LocalDateTime;
 
 @Entity
@@ -12,14 +16,28 @@ public class Task {
     private Long id;
     
     @Column(nullable = false) private String title;
+    
+    @Column(columnDefinition = "TEXT")
     private String description;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private TaskPriority priority = TaskPriority.MEDIUM;
+    
+    @Column(name = "due_date") private LocalDate dueDate;
+    
+    @Column(name = "due_time") private LocalTime dueTime;
+    
+    @Column(name = "estimated_minutes") private Integer estimatedMinutes;
+
+    @Column(name = "is_active", nullable = false)
+    @Builder.Default
+    private Boolean isActive = true;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
-    
-    @Column(name = "created_date", nullable = false) private LocalDate createdDate;
-    @Column(name = "due_date") private LocalDate dueDate;
     
     @Column(name = "created_at", updatable = false) private LocalDateTime createdAt;
     @Column(name = "updated_at") private LocalDateTime updatedAt;

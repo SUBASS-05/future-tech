@@ -41,7 +41,7 @@ class StudentProvider with ChangeNotifier {
     } catch (e) { 
       _profile = {'error': 'Connection error: \$e'};
       notifyListeners();
-      print(e); 
+      debugPrint(e.toString());
     }
   }
 
@@ -115,7 +115,7 @@ class StudentProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
-    } catch (e) { print(e); }
+    } catch (e) { debugPrint(e.toString()); }
     return [];
   }
 
@@ -125,7 +125,7 @@ class StudentProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
-    } catch (e) { print(e); }
+    } catch (e) { debugPrint(e.toString()); }
     return [];
   }
 
@@ -135,18 +135,33 @@ class StudentProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         _tasks = jsonDecode(response.body);
       }
-    } catch (e) { print(e); }
+    } catch (e) { debugPrint(e.toString()); }
   }
 
-  Future<bool> updateTaskStatus(int taskId, String status) async {
+  Future<String?> updateTaskStatus(int taskId, String status) async {
+    _isLoading = true;
+    notifyListeners();
     try {
       final response = await _apiService.put('/student/tasks/$taskId/status', {'status': status});
+      _isLoading = false;
+      notifyListeners();
+
       if (response.statusCode == 200) {
         await fetchTasks();
-        return true;
+        return null;
+      } else {
+        try {
+          return jsonDecode(response.body)['message'] ?? 'Failed to update status';
+        } catch (_) {
+          return 'Failed to update task status (${response.statusCode})';
+        }
       }
-    } catch (e) { print(e); }
-    return false;
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      debugPrint(e.toString());
+      return 'Connection error: $e';
+    }
   }
 
   Future<void> fetchFees() async {
@@ -155,7 +170,7 @@ class StudentProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         _fees = jsonDecode(response.body);
       }
-    } catch (e) { print(e); }
+    } catch (e) { debugPrint(e.toString()); }
   }
 
   Future<void> fetchAttendance() async {
@@ -164,6 +179,6 @@ class StudentProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         _attendance = jsonDecode(response.body);
       }
-    } catch (e) { print(e); }
+    } catch (e) { debugPrint(e.toString()); }
   }
 }

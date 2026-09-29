@@ -1,0 +1,33 @@
+# Target build directories
+backend/target/
+frontend/build/
+**/target/
+**/build/
+
+# Uploads and temporary files
+backend/uploads/
+*.log
+*.jar
+
+# Temp script artifacts
+frontend/fix*.js
+frontend/fix*.ps1
+frontend/fix*.py
+frontend/migrate*.js
+frontend/migrate*.ps1
+frontend/migrate*.py
+frontend/migrate.dart
+
+# IDE & OS files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub/
+.pub-cache/

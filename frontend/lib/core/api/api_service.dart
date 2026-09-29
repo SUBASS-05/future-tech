@@ -3,7 +3,10 @@ import 'package:http/http.dart' as http;
 import '../../data/secure_storage/secure_storage.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://127.0.0.1:8080/api'; // Use 127.0.0.1 specifically for Windows/Chrome
+  // 127.0.0.1 only works on emulator/PC browser.
+  // For a real Android device, use your PC's local Wi-Fi IP address.
+  // Run `ipconfig` on PC → look for Wi-Fi IPv4 address (e.g. 192.168.x.x)
+  static const String baseUrl = 'http://192.168.31.149:8080/api';
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await SecureStorage.getToken();

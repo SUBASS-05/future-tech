@@ -6,5 +6,6 @@ import com.futuretech.dto.RegisterRequest;
 
 public interface AuthService {
     MessageResponse registerStudent(RegisterRequest request);
+    MessageResponse registerAdmin(RegisterRequest request);
     AuthResponse login(AuthRequest request);
 }

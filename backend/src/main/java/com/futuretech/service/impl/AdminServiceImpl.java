@@ -33,14 +33,26 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    public List<StudentRequestDTO> getApprovedStudents() {
+        return studentRepository.findByStatus(StudentStatus.APPROVED)
+                .stream().map(student -> StudentRequestDTO.builder()
+                        .studentId(student.getId())
+                        .fullName(student.getFirstName() + " " + (student.getLastName() != null ? student.getLastName() : ""))
+                        .email(student.getUser().getEmail())
+                        .institutionName(student.getInstitution() != null ? student.getInstitution().getInstitutionName() : "N/A")
+                        .tuitionJoiningDate(student.getTuitionJoiningDate() != null ? student.getTuitionJoiningDate().toLocalDate().toString() : null)
+                        .status(student.getStatus().name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    @Override
     @Transactional
     public MessageResponse approveStudent(Long studentId) {
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Student not found"));
         student.setStatus(StudentStatus.APPROVED);
         studentRepository.save(student);
-        // Temporarily disabled email process
-        // emailService.sendApprovalNotificationToStudent(student);
         return new MessageResponse("Student approved successfully");
     }
 

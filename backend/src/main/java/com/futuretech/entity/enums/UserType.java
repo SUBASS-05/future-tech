@@ -1,2 +1,2 @@
 package com.futuretech.entity.enums;
-public enum UserType { ADMIN, STUDENT }
+public enum UserType { TOP_ADMIN, ADMIN, STUDENT }

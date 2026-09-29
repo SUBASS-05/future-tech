@@ -19,6 +19,11 @@ public class AuthController {
         return ResponseEntity.ok(authService.registerStudent(request));
     }
 
+    @PostMapping("/register-admin")
+    public ResponseEntity<MessageResponse> registerAdmin(@RequestBody RegisterRequest request) {
+        return ResponseEntity.ok(authService.registerAdmin(request));
+    }
+
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
         return ResponseEntity.ok(authService.login(request));

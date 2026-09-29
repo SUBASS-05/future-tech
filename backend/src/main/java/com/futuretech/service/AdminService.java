@@ -5,6 +5,8 @@ import java.util.List;
 
 public interface AdminService {
     List<StudentRequestDTO> getPendingRequests();
+    List<StudentRequestDTO> getApprovedStudents();
     MessageResponse approveStudent(Long studentId);
     MessageResponse rejectStudent(Long studentId);
 }
+

@@ -36,7 +36,7 @@ public class StudentFeatureController {
         return ResponseEntity.ok(attendanceService.getStudentAttendance(getStudentId(auth.getName())));
     }
     @GetMapping("/tasks")
-    public ResponseEntity<List<StudentTask>> getTasks(Authentication auth) {
+    public ResponseEntity<List<StudentTaskResponse>> getTasks(Authentication auth) {
         return ResponseEntity.ok(taskService.getStudentTasks(auth.getName()));
     }
     @PutMapping("/tasks/{taskId}/status")
@@ -44,3 +44,4 @@ public class StudentFeatureController {
         return ResponseEntity.ok(taskService.updateTaskStatus(auth.getName(), taskId, req.getStatus()));
     }
 }
+

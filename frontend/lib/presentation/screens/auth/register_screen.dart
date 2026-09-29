@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/auth_provider.dart';
+import '../../widgets/components.dart';
+import '../../../core/theme/design_system.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -16,39 +18,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _institutionController = TextEditingController();
   String _selectedRole = 'STUDENT';
+  bool _obscurePassword = true;
 
-  Future<void> _register() async {
-    if (_formKey.currentState!.validate()) {
-      final authProvider = context.read<AuthProvider>();
-      
-      final success = await authProvider.registerStudent(
-        _nameController.text.trim(),
-        _emailController.text.trim(),
-        _passwordController.text,
-        _institutionController.text.trim(),
-        _selectedRole,
-      );
-
-      if (mounted) {
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Registration successful. Please wait for Admin approval.'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.pop(context); // Go back to login screen
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(authProvider.error ?? 'Registration failed'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
-  }
+  // The registration logic has been moved inline to the button onPressed callback
 
   @override
   void dispose() {
@@ -69,55 +41,50 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(FTSpacing.xxl),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.person_add, size: 64, color: Colors.blue),
-                const SizedBox(height: 32),
-                TextFormField(
+                const Icon(Icons.person_add, size: 64, color: FTColors.primary),
+                const SizedBox(height: FTSpacing.xxl),
+                FTTextField(
+                  label: 'Full Name',
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Full Name',
-                    prefixIcon: Icon(Icons.person),
-                    border: OutlineInputBorder(),
-                  ),
                   validator: (value) => 
                       (value == null || value.isEmpty) ? 'Please enter your full name' : null,
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
+                const SizedBox(height: FTSpacing.md),
+                FTTextField(
+                  label: 'Email',
                   controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email),
-                    border: OutlineInputBorder(),
-                  ),
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) => 
                       (value == null || value.isEmpty) ? 'Please enter your email' : null,
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
+                const SizedBox(height: FTSpacing.md),
+                FTTextField(
+                  label: 'Password',
                   controller: _passwordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: Icon(Icons.lock),
-                    border: OutlineInputBorder(),
+                  obscureText: _obscurePassword,
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
                   ),
-                  obscureText: true,
                   validator: (value) => 
                       (value == null || value.length < 6) ? 'Password must be at least 6 characters' : null,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: FTSpacing.md),
                 DropdownButtonFormField<String>(
-                  value: _selectedRole,
+                  initialValue: _selectedRole,
                   decoration: const InputDecoration(
                     labelText: 'Register as',
                     prefixIcon: Icon(Icons.people),
-                    border: OutlineInputBorder(),
                   ),
                   items: const [
                     DropdownMenuItem(value: 'STUDENT', child: Text('Student')),
@@ -130,27 +97,75 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 if (_selectedRole == 'STUDENT') ...[
-                  const SizedBox(height: 16),
-                  TextFormField(
+                  const SizedBox(height: FTSpacing.md),
+                  FTTextField(
+                    label: 'Institution Name (College/School)',
                     controller: _institutionController,
-                    decoration: const InputDecoration(
-                      labelText: 'Institution Name (College/School)',
-                      prefixIcon: Icon(Icons.business),
-                      border: OutlineInputBorder(),
-                    ),
                     validator: (value) => 
                         (value == null || value.isEmpty) ? 'Please enter your institution name' : null,
                   ),
                 ],
-                const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: isLoading ? null : _register,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: isLoading
-                      ? const CircularProgressIndicator()
-                      : const Text('REGISTER', style: TextStyle(fontSize: 16)),
+                const SizedBox(height: FTSpacing.xxxl),
+                FTButton(
+                  text: 'Register',
+                  isLoading: isLoading,
+                  onPressed: () async {
+                    if (_formKey.currentState!.validate()) {
+                      final authProvider = context.read<AuthProvider>();
+                      bool success = false;
+                      
+                      if (_selectedRole == 'STUDENT') {
+                        success = await authProvider.registerStudent(
+                          _nameController.text.trim(),
+                          _emailController.text.trim(),
+                          _passwordController.text,
+                          _institutionController.text.trim(),
+                          _selectedRole,
+                        );
+                      } else {
+                        // Extract first and last name from full name
+                        final names = _nameController.text.trim().split(' ');
+                        final firstName = names.isNotEmpty ? names.first : '';
+                        final lastName = names.length > 1 ? names.sublist(1).join(' ') : '';
+                        
+                        success = await authProvider.registerAdmin(
+                          firstName.isEmpty ? 'Unknown' : firstName,
+                          lastName.isEmpty ? 'Unknown' : lastName,
+                          _emailController.text.trim(),
+                          _passwordController.text,
+                        );
+                      }
+
+                      if (mounted) {
+                        if (success) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                _selectedRole == 'ADMIN' 
+                                ? 'Registration successful! Your account is pending verification by Top Admin.'
+                                : 'Registration successful. Please wait for Admin approval.'
+                              ),
+                              backgroundColor: FTColors.success,
+                            ),
+                          );
+                          Navigator.pop(context); // Go back to login screen
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Row(
+                                children: [
+                                  const Icon(Icons.error_outline, color: FTColors.surface),
+                                  const SizedBox(width: FTSpacing.sm),
+                                  Expanded(child: Text(authProvider.error ?? 'Registration failed', style: FTTypography.body.copyWith(color: FTColors.surface))),
+                                ],
+                              ),
+                              backgroundColor: FTColors.error,
+                            ),
+                          );
+                        }
+                      }
+                    }
+                  },
                 ),
               ],
             ),

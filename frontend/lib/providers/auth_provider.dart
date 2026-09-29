@@ -17,6 +17,7 @@ class AuthProvider with ChangeNotifier {
   String? get profileStatus => _profileStatus;
 
   bool get isAuthenticated => _role != null;
+  bool get isProfileCompleted => _profileStatus == 'COMPLETED';
 
   Future<void> checkAuthStatus() async {
     final token = await SecureStorage.getToken();
@@ -48,6 +49,7 @@ class AuthProvider with ChangeNotifier {
         await SecureStorage.saveToken(token);
         await SecureStorage.saveRole(userRole);
         await SecureStorage.saveProfileStatus(profileStatus);
+        await SecureStorage.saveEmail(email); // Save email for quick access across screens
 
         _role = userRole;
         _profileStatus = profileStatus;
@@ -100,10 +102,40 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> registerAdmin(String firstName, String lastName, String email, String password) async {
+    _setLoading(true);
+    try {
+      final response = await _apiService.post('/auth/register-admin', {
+        'firstName': firstName,
+        'lastName': lastName,
+        'email': email,
+        'password': password,
+      });
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        _error = null;
+        _setLoading(false);
+        return true;
+      } else {
+        _error = jsonDecode(response.body)['message'] ?? 'Registration failed';
+        _setLoading(false);
+        return false;
+      }
+    } catch (e) {
+      _error = 'Connection error: $e';
+      _setLoading(false);
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     await SecureStorage.clearAll();
     _role = null;
     notifyListeners();
+  }
+
+  void handleUnauthorized() {
+    logout();
   }
 
   void _setLoading(bool value) {

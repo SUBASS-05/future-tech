@@ -4,6 +4,8 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../providers/student_provider.dart';
 import '../../../../providers/auth_provider.dart';
 import '../profile_completion_screen.dart';
+import '../../../widgets/components.dart';
+import '../../../../core/theme/design_system.dart';
 
 class ProfileTab extends StatelessWidget {
   const ProfileTab({super.key});
@@ -18,17 +20,25 @@ class ProfileTab extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Profile'),
-        backgroundColor: Colors.white,
+        backgroundColor: FTColors.surface,
       ),
       body: provider.isLoading 
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: FTLoading())
           : _buildBody(context, provider.profile, isIncomplete),
     );
   }
 
   Widget _buildBody(BuildContext context, Map<String, dynamic>? profile, bool isIncomplete) {
-    if (profile == null) return const Center(child: Text('Profile not found'));
-    if (profile.containsKey('error')) return Center(child: Text(profile['error'].toString(), textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)));
+    if (profile == null) return Center(child: Text('Profile not found', style: FTTypography.bodyLarge));
+    if (profile.containsKey('error')) {
+      return Center(
+        child: Text(
+          profile['error'].toString(),
+          textAlign: TextAlign.center,
+          style: FTTypography.bodyLarge.copyWith(color: FTColors.error),
+        ),
+      );
+    }
     
     // Calculate completeness
     final List<Map<String, dynamic>> allFields = [
@@ -72,30 +82,27 @@ class ProfileTab extends StatelessWidget {
     double progress = totalCount > 0 ? completedCount / totalCount : 0.0;
 
     return ListView(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(FTSpacing.md),
       children: [
         Center(
           child: Column(
             children: [
-              CircleAvatar(
-                radius: 50, 
-                backgroundImage: profile['profilePhotoUrl'] != null 
-                    ? NetworkImage(profile['profilePhotoUrl']) 
-                    : null,
-                child: profile['profilePhotoUrl'] == null ? const Icon(Icons.person, size: 50) : null,
+              FTAvatar(
+                radius: 50,
+                imageUrl: profile['profilePhotoUrl'],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: FTSpacing.sm),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   TextButton.icon(
                     onPressed: () => _pickAndUploadImage(context, context.read<StudentProvider>()),
-                    icon: const Icon(Icons.camera_alt),
-                    label: Text(profile['profilePhotoUrl'] == null ? 'Add Profile Photo' : 'Change Profile Photo'),
+                    icon: const Icon(Icons.camera_alt, color: FTColors.primary),
+                    label: Text(profile['profilePhotoUrl'] == null ? 'Add Photo' : 'Change Photo', style: FTTypography.button.copyWith(color: FTColors.primary)),
                   ),
                   if (profile['profilePhotoUrl'] != null)
                     IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
+                      icon: const Icon(Icons.delete, color: FTColors.error),
                       onPressed: () => _confirmRemovePhoto(context, context.read<StudentProvider>()),
                     ),
                 ],
@@ -103,116 +110,121 @@ class ProfileTab extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: FTSpacing.md),
         
         Center(
           child: Column(
             children: [
               Text(
                 'Student ID: ${profile['studentCode'] ?? 'N/A'}',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: FTTypography.bodyLarge.copyWith(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: FTSpacing.xxs),
               Text(
                 'Tuition Joining Date: ${_formatDate(profile['tuitionJoiningDate'])}',
-                style: const TextStyle(color: Colors.grey),
+                style: FTTypography.bodySmall,
               ),
             ],
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: FTSpacing.xl),
         
         if (isIncomplete) ...[
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(FTSpacing.md),
             decoration: BoxDecoration(
-              color: Colors.orange.shade50,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.orange.shade200),
+              color: FTColors.secondaryLight,
+              borderRadius: BorderRadius.circular(FTRadius.medium),
+              border: Border.all(color: FTColors.warning.withAlpha(128)),
             ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.warning_amber_rounded, color: Colors.orange),
-                    SizedBox(width: 8),
-                    Text('Profile incomplete', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.orange)),
+                    const Icon(Icons.warning_amber_rounded, color: FTColors.warning),
+                    const SizedBox(width: FTSpacing.sm),
+                    Text('Profile incomplete', style: FTTypography.bodyLarge.copyWith(color: FTColors.warning, fontWeight: FontWeight.bold)),
                   ],
                 ),
-                const SizedBox(height: 8),
-                const Text('Complete your details to keep your information up to date.', style: TextStyle(color: Colors.black87)),
+                const SizedBox(height: FTSpacing.sm),
+                Text('Complete your details to keep your information up to date.', style: FTTypography.bodySmall),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: FTSpacing.md),
         ],
 
-        // Progress Bar
-        Text('Profile Completion', style: const TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        LinearProgressIndicator(
-          value: progress,
-          backgroundColor: Colors.grey.shade300,
-          color: progress == 1.0 ? Colors.green : Colors.blue,
-          minHeight: 10,
-          borderRadius: BorderRadius.circular(5),
+        FTCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Profile Completion', style: FTTypography.heading3),
+              const SizedBox(height: FTSpacing.md),
+              FTProgressIndicator(
+                value: progress,
+                color: progress == 1.0 ? FTColors.success : FTColors.primary,
+              ),
+              const SizedBox(height: FTSpacing.sm),
+              Text(
+                progress == 1.0 
+                    ? 'Profile Completed (100%)' 
+                    : '$completedCount of $totalCount required details completed (${(progress * 100).toInt()}%)',
+                style: FTTypography.bodySmall.copyWith(
+                  color: progress == 1.0 ? FTColors.success : FTColors.textSecondary,
+                  fontWeight: progress == 1.0 ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 8),
-        Text(
-          progress == 1.0 
-              ? 'Profile Completed (100%)' 
-              : '$completedCount of $totalCount required details completed (${(progress * 100).toInt()}%)',
-          style: TextStyle(color: progress == 1.0 ? Colors.green : Colors.black54, fontWeight: progress == 1.0 ? FontWeight.bold : FontWeight.normal),
-        ),
-        const SizedBox(height: 24),
+        const SizedBox(height: FTSpacing.xl),
         
         _buildChecklistSection('Personal Information', allFields.where((f) => f['section'] == 'Personal').toList(), isIncomplete),
         _buildChecklistSection('Academic Information', allFields.where((f) => f['section'] == 'Academic').toList(), isIncomplete),
         _buildChecklistSection('Parent / Guardian', allFields.where((f) => f['section'] == 'Parent').toList(), isIncomplete),
         
-        const SizedBox(height: 32),
+        const SizedBox(height: FTSpacing.xl),
         Center(
-          child: ElevatedButton(
+          child: FTButton(
             onPressed: () {
                Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileCompletionScreen()));
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isIncomplete ? Colors.blue : Colors.green,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-            ),
-            child: Text(isIncomplete ? 'Complete Profile' : 'Edit Profile'),
+            text: isIncomplete ? 'Complete Profile' : 'Edit Profile',
           ),
         ),
+        const SizedBox(height: FTSpacing.xl),
       ],
     );
   }
 
   Widget _buildChecklistSection(String title, List<Map<String, dynamic>> fields, bool showIcons) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green)),
-        const Divider(),
-        ...fields.map((f) {
-          bool isComplete = f['value'] != null && f['value'].toString().isNotEmpty;
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4.0),
-            child: Row(
-              children: [
-                Expanded(flex: 2, child: Text(f['label'])),
-                if (!showIcons) 
-                  Expanded(flex: 3, child: Text(f['value']?.toString() ?? '-', style: const TextStyle(color: Colors.black54)))
-                else
-                  isComplete 
-                    ? const Icon(Icons.check, color: Colors.green, size: 20)
-                    : const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
-              ],
-            ),
-          );
-        }).toList(),
-        const SizedBox(height: 16),
-      ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: FTSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: FTTypography.heading3.copyWith(color: FTColors.primary)),
+          const Divider(color: FTColors.border, height: FTSpacing.xl),
+          ...fields.map((f) {
+            bool isComplete = f['value'] != null && f['value'].toString().isNotEmpty;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: FTSpacing.xs),
+              child: Row(
+                children: [
+                  Expanded(flex: 2, child: Text(f['label'], style: FTTypography.body)),
+                  if (!showIcons) 
+                    Expanded(flex: 3, child: Text(f['value']?.toString() ?? '-', style: FTTypography.body.copyWith(color: FTColors.textSecondary)))
+                  else
+                    isComplete 
+                      ? const Icon(Icons.check_circle, color: FTColors.success, size: 20)
+                      : const Icon(Icons.warning_amber_rounded, color: FTColors.warning, size: 20),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
     );
   }
 
@@ -250,24 +262,24 @@ class ProfileTab extends StatelessWidget {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (dCtx) => AlertDialog(
-            title: const Text('Preview'),
+          builder: (dCtx) => FTDialog(
+            title: 'Preview',
             content: Image.memory(bytes),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(dCtx), child: const Text('Choose Another')),
-              ElevatedButton(
+              FTButton(onPressed: () => Navigator.pop(dCtx), text: 'Choose Another', isSecondary: true),
+              FTButton(
                 onPressed: () async {
                   Navigator.pop(dCtx);
                   final error = await provider.uploadProfilePhoto(bytes, pickedFile.name);
                   if (context.mounted) {
                     if (error == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile photo updated'), backgroundColor: Colors.green));
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile photo updated'), backgroundColor: FTColors.success));
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error), backgroundColor: Colors.red));
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error), backgroundColor: FTColors.error));
                     }
                   }
                 },
-                child: const Text('Upload Photo'),
+                text: 'Upload Photo',
               )
             ],
           ),
@@ -275,7 +287,7 @@ class ProfileTab extends StatelessWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unable to open gallery or select image.')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unable to open gallery or select image.'), backgroundColor: FTColors.error));
       }
     }
   }
@@ -283,12 +295,12 @@ class ProfileTab extends StatelessWidget {
   Future<void> _confirmRemovePhoto(BuildContext context, StudentProvider provider) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Remove Profile Photo?'),
-        content: const Text('Are you sure?'),
+      builder: (ctx) => FTDialog(
+        title: 'Remove Profile Photo?',
+        content: Text('Are you sure?', style: FTTypography.body),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Remove', style: TextStyle(color: Colors.red))),
+          FTButton(onPressed: () => Navigator.pop(ctx, false), text: 'Cancel', isSecondary: true),
+          FTButton(onPressed: () => Navigator.pop(ctx, true), text: 'Remove', isDestructive: true),
         ],
       )
     );
@@ -297,13 +309,11 @@ class ProfileTab extends StatelessWidget {
       final error = await provider.removeProfilePhoto();
       if (context.mounted) {
         if (error == null) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile photo removed'), backgroundColor: Colors.green));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile photo removed'), backgroundColor: FTColors.success));
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error), backgroundColor: Colors.red));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error), backgroundColor: FTColors.error));
         }
       }
     }
   }
 }
-
-

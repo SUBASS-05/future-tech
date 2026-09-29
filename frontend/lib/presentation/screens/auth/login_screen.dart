@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/auth_provider.dart';
 import 'register_screen.dart';
+import '../../widgets/components.dart';
+import '../../../core/theme/design_system.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   String _selectedRole = 'STUDENT';
+  bool _obscurePassword = true;
 
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
@@ -29,12 +32,18 @@ class _LoginScreenState extends State<LoginScreen> {
       if (profileStatus == null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(authProvider.error ?? 'Login failed'),
-            backgroundColor: Colors.red,
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: FTColors.surface),
+                const SizedBox(width: FTSpacing.sm),
+                Text(authProvider.error ?? 'Login failed', style: FTTypography.body.copyWith(color: FTColors.surface)),
+              ],
+            ),
+            backgroundColor: FTColors.error,
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
-      // If success, main.dart's AuthWrapper will automatically rebuild and navigate
     }
   }
 
@@ -52,32 +61,32 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(FTSpacing.xxl),
           child: Form(
             key: _formKey,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.school, size: 80, color: Colors.blue),
-                const SizedBox(height: 16),
+                const Icon(Icons.school, size: 64, color: FTColors.primary),
+                const SizedBox(height: FTSpacing.lg),
                 const Text(
                   'Future Tech',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                  style: FTTypography.heading1,
                 ),
+                const SizedBox(height: FTSpacing.xs),
                 const Text(
-                  'Learn. Grow. Achieve.',
+                  'Learn • Grow • Achieve',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                  style: FTTypography.body,
                 ),
-                const SizedBox(height: 48),
+                const SizedBox(height: FTSpacing.xxxl),
                 DropdownButtonFormField<String>(
-                  value: _selectedRole,
+                  initialValue: _selectedRole,
                   decoration: const InputDecoration(
                     labelText: 'Login as',
                     prefixIcon: Icon(Icons.people),
-                    border: OutlineInputBorder(),
                   ),
                   items: const [
                     DropdownMenuItem(value: 'STUDENT', child: Text('Student')),
@@ -89,41 +98,37 @@ class _LoginScreenState extends State<LoginScreen> {
                     });
                   },
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
+                const SizedBox(height: FTSpacing.md),
+                FTTextField(
+                  label: 'Email',
                   controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email),
-                    border: OutlineInputBorder(),
-                  ),
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) => 
-                      (value == null || value.isEmpty) ? 'Please enter your email' : null,
+                      (value == null || value.isEmpty) ? 'Please enter a valid email address.' : null,
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
+                const SizedBox(height: FTSpacing.md),
+                FTTextField(
+                  label: 'Password',
                   controller: _passwordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: Icon(Icons.lock),
-                    border: OutlineInputBorder(),
+                  obscureText: _obscurePassword,
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
                   ),
-                  obscureText: true,
                   validator: (value) => 
-                      (value == null || value.isEmpty) ? 'Please enter your password' : null,
+                      (value == null || value.isEmpty) ? 'Please enter your password.' : null,
                 ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: isLoading ? null : _login,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: isLoading
-                      ? const CircularProgressIndicator()
-                      : const Text('LOGIN', style: TextStyle(fontSize: 16)),
+                const SizedBox(height: FTSpacing.xl),
+                FTButton(
+                  text: 'Login',
+                  isLoading: isLoading,
+                  onPressed: _login,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: FTSpacing.lg),
                 TextButton(
                   onPressed: () {
                     Navigator.push(
@@ -131,7 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       MaterialPageRoute(builder: (context) => const RegisterScreen()),
                     );
                   },
-                  child: const Text('Don\'t have an account? Register here'),
+                  child: const Text('Don\'t have an account? Create Account'),
                 ),
               ],
             ),

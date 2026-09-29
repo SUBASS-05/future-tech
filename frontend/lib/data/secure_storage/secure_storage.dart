@@ -31,6 +31,16 @@ class SecureStorage {
     return await _storage.read(key: _keyProfileStatus);
   }
 
+  static const _keyEmail = 'user_email';
+
+  static Future<void> saveEmail(String email) async {
+    await _storage.write(key: _keyEmail, value: email);
+  }
+
+  static Future<String?> getEmail() async {
+    return await _storage.read(key: _keyEmail);
+  }
+
   static Future<void> clearAll() async {
     await _storage.deleteAll();
   }
