@@ -25,6 +25,8 @@ public class Student {
     private String address;
     private String city;
     
+    private String pincode;
+    
     @Enumerated(EnumType.STRING)
     @Column(name = "education_type") private EducationType educationType;
     
@@ -45,9 +47,11 @@ public class Student {
     @Column(name = "academic_batch") private String academicBatch;
     
     @Column(name = "parent_name") private String parentName;
+    @Column(name = "parent_relationship") private String parentRelationship;
     @Column(name = "parent_phone") private String parentPhone;
+    @Column(name = "alternative_parent_phone") private String alternativeParentPhone;
     @Column(name = "profile_photo_url") private String profilePhotoUrl;
-    @Column(name = "joining_date") private LocalDate joiningDate;
+    @Column(name = "tuition_joining_date") private LocalDateTime tuitionJoiningDate;
     
     @Enumerated(EnumType.STRING)
     @Column(name = "profile_status") private ProfileStatus profileStatus = ProfileStatus.INCOMPLETE;

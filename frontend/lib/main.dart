@@ -6,7 +6,6 @@ import 'providers/student_provider.dart';
 import 'presentation/screens/auth/login_screen.dart';
 import 'presentation/screens/admin/admin_dashboard.dart';
 import 'presentation/screens/student/student_dashboard.dart';
-import 'presentation/screens/student/profile_completion_screen.dart';
 
 void main() {
   runApp(const FutureTechApp());
@@ -89,9 +88,6 @@ class AuthWrapper extends StatelessWidget {
       if (authProvider.role == 'ADMIN') {
         return const AdminDashboard();
       } else {
-        if (authProvider.profileStatus == 'INCOMPLETE') {
-          return const ProfileCompletionScreen();
-        }
         return const StudentDashboard();
       }
     }

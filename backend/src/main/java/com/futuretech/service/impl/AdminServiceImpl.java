@@ -26,6 +26,7 @@ public class AdminServiceImpl implements AdminService {
                         .fullName(student.getFirstName() + " " + (student.getLastName() != null ? student.getLastName() : ""))
                         .email(student.getUser().getEmail())
                         .institutionName(student.getInstitution() != null ? student.getInstitution().getInstitutionName() : "N/A")
+                        .tuitionJoiningDate(student.getTuitionJoiningDate() != null ? student.getTuitionJoiningDate().toLocalDate().toString() : null)
                         .status(student.getStatus().name())
                         .build())
                 .collect(Collectors.toList());

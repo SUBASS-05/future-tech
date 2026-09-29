@@ -39,4 +39,28 @@ class ApiService {
       body: jsonEncode(body),
     );
   }
+
+  Future<http.Response> delete(String endpoint) async {
+    final url = Uri.parse('$baseUrl$endpoint');
+    final headers = await _getHeaders();
+    return await http.delete(url, headers: headers);
+  }
+
+  Future<http.StreamedResponse> postMultipart(String endpoint, String filePath, String fileField) async {
+    final url = Uri.parse('$baseUrl$endpoint');
+    final token = await SecureStorage.getToken();
+    var request = http.MultipartRequest('POST', url);
+    if (token != null) request.headers['Authorization'] = 'Bearer $token';
+    request.files.add(await http.MultipartFile.fromPath(fileField, filePath));
+    return await request.send();
+  }
+
+  Future<http.StreamedResponse> postMultipartBytes(String endpoint, List<int> bytes, String filename, String fileField) async {
+    final url = Uri.parse('$baseUrl$endpoint');
+    final token = await SecureStorage.getToken();
+    var request = http.MultipartRequest('POST', url);
+    if (token != null) request.headers['Authorization'] = 'Bearer $token';
+    request.files.add(http.MultipartFile.fromBytes(fileField, bytes, filename: filename));
+    return await request.send();
+  }
 }

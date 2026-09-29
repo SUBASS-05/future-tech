@@ -44,4 +44,26 @@ class AdminProvider with ChangeNotifier {
     } catch (e) { print(e); }
     return false;
   }
+
+  Future<bool> createTask(String title, String description, String batch) async {
+    _isLoading = true;
+    notifyListeners();
+    bool success = false;
+    try {
+      final payload = {
+        'title': title,
+        'description': description,
+        'dueDate': DateTime.now().add(const Duration(days: 1)).toIso8601String().split('T')[0],
+        'targetType': 'BATCH',
+        'academicBatch': batch,
+      };
+      final response = await _apiService.post('/admin/tasks', payload);
+      if (response.statusCode == 200) {
+        success = true;
+      }
+    } catch (e) { print(e); }
+    _isLoading = false;
+    notifyListeners();
+    return success;
+  }
 }

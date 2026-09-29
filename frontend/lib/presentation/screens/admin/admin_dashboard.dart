@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../providers/admin_provider.dart';
 import '../../../providers/auth_provider.dart';
+import 'tabs/requests_tab.dart';
+import 'tabs/tasks_tab.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -10,17 +11,17 @@ class AdminDashboard extends StatefulWidget {
 }
 
 class _AdminDashboardState extends State<AdminDashboard> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AdminProvider>().fetchPendingRequests();
-    });
-  }
+  int _currentIndex = 0;
+  
+  final List<Widget> _tabs = [
+    const RequestsTab(),
+    const TasksTab(),
+    const Center(child: Text('Fees Management - Coming Soon')),
+    const Center(child: Text('Attendance - Coming Soon')),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final adminProvider = context.watch<AdminProvider>();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Admin Dashboard'),
@@ -31,37 +32,23 @@ class _AdminDashboardState extends State<AdminDashboard> {
           )
         ],
       ),
-      body: adminProvider.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : adminProvider.pendingRequests.isEmpty
-              ? const Center(child: Text('No pending requests.'))
-              : ListView.builder(
-                  itemCount: adminProvider.pendingRequests.length,
-                  itemBuilder: (context, index) {
-                    final req = adminProvider.pendingRequests[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: ListTile(
-                        leading: const CircleAvatar(child: Icon(Icons.person)),
-                        title: Text(req['fullName'] ?? 'Unknown'),
-                        subtitle: Text('${req['email']} - ${req['institutionName']}'),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.check, color: Colors.green),
-                              onPressed: () => adminProvider.approveStudent(req['studentId']),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.close, color: Colors.red),
-                              onPressed: () => adminProvider.rejectStudent(req['studentId']),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
+      body: _tabs[_currentIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.person_add), label: 'Requests'),
+          BottomNavigationBarItem(icon: Icon(Icons.assignment), label: 'Tasks'),
+          BottomNavigationBarItem(icon: Icon(Icons.attach_money), label: 'Fees'),
+          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Attendance'),
+        ],
+      ),
     );
   }
 }
+

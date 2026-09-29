@@ -34,8 +34,15 @@ class StudentProvider with ChangeNotifier {
       final response = await _apiService.get('/student/profile');
       if (response.statusCode == 200) {
         _profile = jsonDecode(response.body);
+      } else {
+        _profile = {'error': 'Failed to fetch profile: \${response.statusCode} \${response.body}'};
       }
-    } catch (e) { print(e); }
+      notifyListeners();
+    } catch (e) { 
+      _profile = {'error': 'Connection error: \$e'};
+      notifyListeners();
+      print(e); 
+    }
   }
 
   Future<String?> updateProfile(Map<String, dynamic> profileData) async {
@@ -47,6 +54,7 @@ class StudentProvider with ChangeNotifier {
       notifyListeners();
       
       if (response.statusCode == 200) {
+        await fetchProfile();
         return null; // Success (no error string)
       } else {
         return jsonDecode(response.body)['message'] ?? 'Failed to update profile';
@@ -56,6 +64,69 @@ class StudentProvider with ChangeNotifier {
       notifyListeners();
       return 'Connection error: $e';
     }
+  }
+
+  Future<String?> uploadProfilePhoto(List<int> bytes, String filename) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final response = await _apiService.postMultipartBytes('/student/profile/photo', bytes, filename, 'file');
+      _isLoading = false;
+      if (response.statusCode == 200) {
+        await fetchProfile();
+        return null; // Success
+      } else {
+        final respStr = await response.stream.bytesToString();
+        try {
+          return jsonDecode(respStr)['message'] ?? 'Failed to upload photo';
+        } catch (_) {
+          return 'Failed to upload photo';
+        }
+      }
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return 'Connection error: $e';
+    }
+  }
+
+  Future<String?> removeProfilePhoto() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final response = await _apiService.delete('/student/profile/photo');
+      _isLoading = false;
+      if (response.statusCode == 200) {
+        await fetchProfile();
+        return null;
+      } else {
+        return jsonDecode(response.body)['message'] ?? 'Failed to remove photo';
+      }
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return 'Connection error: $e';
+    }
+  }
+  
+  Future<List<dynamic>> fetchInstitutions() async {
+    try {
+      final response = await _apiService.get('/student/institutions');
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) { print(e); }
+    return [];
+  }
+
+  Future<List<dynamic>> fetchDepartments(int institutionId) async {
+    try {
+      final response = await _apiService.get('/student/institutions/$institutionId/departments');
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) { print(e); }
+    return [];
   }
 
   Future<void> fetchTasks() async {

@@ -7,6 +7,7 @@ import java.time.LocalDate;
 @Builder
 public class StudentProfileDTO {
     private String studentCode;
+    private String tuitionJoiningDate;
     private String firstName;
     private String lastName;
     private String email;
@@ -15,6 +16,7 @@ public class StudentProfileDTO {
     private String gender;
     private String address;
     private String city;
+    private String pincode;
     private String educationType;
     private String institutionName;
     private String departmentName;
@@ -25,7 +27,11 @@ public class StudentProfileDTO {
     private Integer passingYear;
     private String academicBatch;
     private String parentName;
+    private String parentRelationship;
     private String parentPhone;
+    private String alternativeParentPhone;
+    private Long institutionId;
+    private Long departmentId;
     private String profilePhotoUrl;
     private String profileStatus;
     private String status;

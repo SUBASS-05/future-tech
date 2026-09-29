@@ -1,0 +1,67 @@
+package com.futuretech.service.impl;
+import com.futuretech.service.FileStorageService;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.UUID;
+import org.springframework.util.StringUtils;
+
+@Service
+public class LocalFileStorageServiceImpl implements FileStorageService {
+    private final Path fileStorageLocation;
+    
+    public LocalFileStorageServiceImpl() {
+        this.fileStorageLocation = Paths.get("uploads").toAbsolutePath().normalize();
+        try {
+            Files.createDirectories(this.fileStorageLocation);
+        } catch (Exception ex) {
+            throw new RuntimeException("Could not create the directory where the uploaded files will be stored.", ex);
+        }
+    }
+    
+    @Override
+    public String storeFile(MultipartFile file) {
+        String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
+        String fileExtension = "";
+        try {
+            fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
+        } catch(Exception e) {
+            fileExtension = ".jpg";
+        }
+        
+        String fileName = UUID.randomUUID().toString() + fileExtension;
+        
+        try {
+            if (fileName.contains("..")) {
+                throw new RuntimeException("Sorry! Filename contains invalid path sequence " + fileName);
+            }
+            Path targetLocation = this.fileStorageLocation.resolve(fileName);
+            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+            
+            String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path("/uploads/")
+                    .path(fileName)
+                    .toUriString();
+            return fileDownloadUri;
+        } catch (IOException ex) {
+            throw new RuntimeException("Could not store file " + fileName + ". Please try again!", ex);
+        }
+    }
+    
+    @Override
+    public void deleteFile(String fileUrl) {
+        if (fileUrl == null || fileUrl.isEmpty()) return;
+        try {
+            String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+            Path filePath = this.fileStorageLocation.resolve(fileName).normalize();
+            Files.deleteIfExists(filePath);
+        } catch (IOException ex) {
+            System.err.println("Could not delete file " + fileUrl);
+        }
+    }
+}

@@ -16,7 +16,6 @@ class StudentDashboard extends StatefulWidget {
 class _StudentDashboardState extends State<StudentDashboard> {
   int _currentIndex = 0;
   final List<Widget> _tabs = [
-    const ProfileTab(),
     const TasksTab(),
     const FeesTab(),
     const AttendanceTab(),
@@ -30,11 +29,56 @@ class _StudentDashboardState extends State<StudentDashboard> {
     });
   }
 
+  void _openProfile() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ProfileTab()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+    final studentProvider = context.watch<StudentProvider>();
+    final profile = studentProvider.profile;
+    
+    final bool isIncomplete = authProvider.profileStatus == 'INCOMPLETE';
+    final String? photoUrl = profile?['profilePhotoUrl'];
+    final String firstName = profile?['firstName'] ?? 'Student';
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Future Tech Student'),
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: GestureDetector(
+            onTap: _openProfile,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                CircleAvatar(
+                  backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+                  backgroundColor: Colors.grey.shade300,
+                  child: photoUrl == null ? const Icon(Icons.person, color: Colors.grey) : null,
+                ),
+                if (isIncomplete)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        title: Text('Hello, $firstName 👋'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -42,16 +86,21 @@ class _StudentDashboardState extends State<StudentDashboard> {
           )
         ],
       ),
-      body: _tabs[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        type: BottomNavigationBarType.fixed,
-        onTap: (index) => setState(() => _currentIndex = index),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-          BottomNavigationBarItem(icon: Icon(Icons.assignment), label: 'Tasks'),
-          BottomNavigationBarItem(icon: Icon(Icons.payment), label: 'Fees'),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Attendance'),
+      body: Row(
+        children: [
+          NavigationRail(
+            selectedIndex: _currentIndex,
+            onDestinationSelected: (index) => setState(() => _currentIndex = index),
+            labelType: NavigationRailLabelType.all,
+            backgroundColor: Colors.grey.shade50,
+            destinations: const [
+              NavigationRailDestination(icon: Icon(Icons.assignment), label: Text('Tasks')),
+              NavigationRailDestination(icon: Icon(Icons.payment), label: Text('Fees')),
+              NavigationRailDestination(icon: Icon(Icons.calendar_today), label: Text('Attendance')),
+            ],
+          ),
+          const VerticalDivider(thickness: 1, width: 1),
+          Expanded(child: _tabs[_currentIndex]),
         ],
       ),
     );

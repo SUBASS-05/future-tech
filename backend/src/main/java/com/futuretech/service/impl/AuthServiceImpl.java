@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -59,6 +60,7 @@ public class AuthServiceImpl implements AuthService {
                     .institution(tempInstitution)
                     .status(StudentStatus.PENDING_APPROVAL)
                     .profileStatus(ProfileStatus.INCOMPLETE)
+                    .tuitionJoiningDate(LocalDateTime.now())
                     .build();
             studentRepository.save(student);
 

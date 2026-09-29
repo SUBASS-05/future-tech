@@ -11,12 +11,16 @@ public class UpdateProfileRequest {
     private String phone;
     private String address;
     private String city;
+    private String pincode;
     private String parentName;
+    private String parentRelationship;
     private String parentPhone;
+    private String alternativeParentPhone;
     private String profilePhotoUrl;
     private String educationType;
     private Long institutionId;
     private Long departmentId;
+    private String departmentName;
     private String classStandard;
     private String section;
     private String academicYear;

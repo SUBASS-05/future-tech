@@ -9,5 +9,6 @@ public class StudentRequestDTO {
     private String fullName;
     private String email;
     private String institutionName;
+    private String tuitionJoiningDate;
     private String status;
 }
