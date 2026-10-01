@@ -19,6 +19,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     const TasksTab(),
     const FeesTab(),
     const AttendanceTab(),
+    const ProfileTab(),
   ];
 
   @override
@@ -30,10 +31,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   void _openProfile() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const ProfileTab()),
-    );
+    setState(() => _currentIndex = 3);
   }
 
   @override
@@ -78,7 +76,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
             ),
           ),
         ),
-        title: Text('Hello, $firstName 👋'),
+        title: Text(firstName),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -86,21 +84,21 @@ class _StudentDashboardState extends State<StudentDashboard> {
           )
         ],
       ),
-      body: Row(
-        children: [
-          NavigationRail(
-            selectedIndex: _currentIndex,
-            onDestinationSelected: (index) => setState(() => _currentIndex = index),
-            labelType: NavigationRailLabelType.all,
-            backgroundColor: Colors.grey.shade50,
-            destinations: const [
-              NavigationRailDestination(icon: Icon(Icons.assignment), label: Text('Tasks')),
-              NavigationRailDestination(icon: Icon(Icons.payment), label: Text('Fees')),
-              NavigationRailDestination(icon: Icon(Icons.calendar_today), label: Text('Attendance')),
-            ],
-          ),
-          const VerticalDivider(thickness: 1, width: 1),
-          Expanded(child: _tabs[_currentIndex]),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _tabs,
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) => setState(() => _currentIndex = index),
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: const Color(0xFF168A55),
+        unselectedItemColor: Colors.grey,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.assignment), label: 'Tasks'),
+          BottomNavigationBarItem(icon: Icon(Icons.payment), label: 'Fees'),
+          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Attendance'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
     );

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/admin_provider.dart';
 import '../../../core/theme/design_system.dart';
+import '../../../core/api/api_service.dart';
 import 'tabs/requests_tab.dart';
 import 'tabs/tasks_tab.dart';
 import 'tabs/admin_management_tab.dart';
 import 'tabs/admin_profile_tab.dart';
+import 'tabs/admin_fees_tab.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -15,16 +18,42 @@ class AdminDashboard extends StatefulWidget {
 
 class _AdminDashboardState extends State<AdminDashboard> {
   int _currentIndex = 0;
-  
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final isTopAdmin = context.read<AuthProvider>().role == 'TOP_ADMIN';
+      if (isTopAdmin) {
+        context.read<AdminProvider>().fetchUnseenNotificationCount();
+      }
+      context.read<AdminProvider>().fetchProfile();
+    });
+  }
+
+  String? _getFormattedPhotoUrl(String? rawUrl) {
+    if (rawUrl == null || rawUrl.trim().isEmpty) return null;
+    String url = rawUrl.trim();
+    String baseHost = ApiService.baseUrl.replaceAll('/api', '');
+    url = url.replaceAll('http://localhost:8080', baseHost)
+             .replaceAll('http://127.0.0.1:8080', baseHost);
+    if (url.startsWith('/uploads/')) {
+      url = '$baseHost$url';
+    }
+    return url;
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
+    final adminProvider = context.watch<AdminProvider>();
     final isTopAdmin = authProvider.role == 'TOP_ADMIN';
-    final isProfileCompleted = authProvider.isProfileCompleted;
+    final isProfileCompleted = authProvider.isProfileCompleted && adminProvider.missingFields.isEmpty;
+    final photoUrl = _getFormattedPhotoUrl(adminProvider.adminProfile?['profilePhotoUrl']);
 
-    // Define tabs and their corresponding navigation items dynamically based on role
     final List<Widget> tabs = [];
     final List<BottomNavigationBarItem> navItems = [];
+    int? feesTabIndex;
 
     // Common Tabs
     tabs.add(const RequestsTab());
@@ -38,8 +67,20 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
     // Top Admin Only Tabs
     if (isTopAdmin) {
-      tabs.add(const Center(child: Text('Fees Management - Coming Soon')));
-      navItems.add(const BottomNavigationBarItem(icon: Icon(Icons.attach_money), label: 'Fees'));
+      feesTabIndex = tabs.length;
+      tabs.add(const AdminFeesTab());
+
+      final int unseenCount = adminProvider.unseenPaymentCount;
+      Widget feesIcon = const Icon(Icons.attach_money);
+      if (unseenCount > 0) {
+        feesIcon = Badge(
+          label: Text('$unseenCount'),
+          backgroundColor: FTColors.error,
+          child: const Icon(Icons.attach_money),
+        );
+      }
+
+      navItems.add(BottomNavigationBarItem(icon: feesIcon, label: 'Fees'));
 
       tabs.add(const AdminManagementTab());
       navItems.add(const BottomNavigationBarItem(icon: Icon(Icons.manage_accounts), label: 'Admins'));
@@ -49,7 +90,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
     tabs.add(const AdminProfileTab());
     navItems.add(const BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'));
 
-    // Ensure _currentIndex is within bounds if role changes
     if (_currentIndex >= tabs.length) {
       _currentIndex = 0;
     }
@@ -62,13 +102,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
             alignment: Alignment.center,
             children: [
               IconButton(
-                icon: const CircleAvatar(
+                icon: CircleAvatar(
                   backgroundColor: FTColors.secondary,
-                  child: Icon(Icons.person, color: FTColors.surface),
+                  backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+                  child: photoUrl == null ? const Icon(Icons.person, color: FTColors.surface) : null,
                 ),
                 onPressed: () {
                   setState(() {
-                    _currentIndex = tabs.length - 1; // Navigate to Profile Tab
+                    _currentIndex = tabs.length - 1; // Profile tab
                   });
                 },
               ),
@@ -101,6 +142,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
           setState(() {
             _currentIndex = index;
           });
+          if (isTopAdmin && feesTabIndex != null && index == feesTabIndex) {
+            context.read<AdminProvider>().markNotificationsSeen();
+          }
         },
         type: BottomNavigationBarType.fixed,
         items: navItems,

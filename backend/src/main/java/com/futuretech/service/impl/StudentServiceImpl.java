@@ -173,19 +173,21 @@ public class StudentServiceImpl implements StudentService {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
         Student student = studentRepository.findByUserId(user.getId()).orElseThrow(() -> new RuntimeException("Student not found"));
         
-        // Validation for JPG/PNG and 5MB
+        // Validation for any image format (screenshots, WebP, HEIC, PNG, JPG, etc.) and 5MB
         String contentType = file.getContentType();
         String originalFilename = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";
-        boolean isImage = false;
-        
-        if (contentType != null && (contentType.equals("image/jpeg") || contentType.equals("image/jpg") || contentType.equals("image/png"))) {
-            isImage = true;
-        } else if (originalFilename.endsWith(".jpg") || originalFilename.endsWith(".jpeg") || originalFilename.endsWith(".png")) {
-            isImage = true;
-        }
+        boolean isImage = (contentType != null && contentType.toLowerCase().startsWith("image/"))
+                || originalFilename.endsWith(".jpg")
+                || originalFilename.endsWith(".jpeg")
+                || originalFilename.endsWith(".png")
+                || originalFilename.endsWith(".webp")
+                || originalFilename.endsWith(".heic")
+                || originalFilename.endsWith(".heif")
+                || originalFilename.endsWith(".bmp")
+                || originalFilename.endsWith(".gif");
 
         if (!isImage) {
-            throw new RuntimeException("Please select a valid image (JPG/PNG).");
+            throw new RuntimeException("Please select a valid image file.");
         }
         if (file.getSize() > 5 * 1024 * 1024) {
             throw new RuntimeException("Image is too large. Please select an image below 5 MB.");

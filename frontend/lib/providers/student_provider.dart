@@ -7,12 +7,14 @@ class StudentProvider with ChangeNotifier {
   bool _isLoading = false;
   Map<String, dynamic>? _profile;
   List<dynamic> _tasks = [];
+  Map<String, dynamic>? _feeSummary;
   List<dynamic> _fees = [];
   List<dynamic> _attendance = [];
 
   bool get isLoading => _isLoading;
   Map<String, dynamic>? get profile => _profile;
   List<dynamic> get tasks => _tasks;
+  Map<String, dynamic>? get feeSummary => _feeSummary;
   List<dynamic> get fees => _fees;
   List<dynamic> get attendance => _attendance;
 
@@ -35,11 +37,11 @@ class StudentProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         _profile = jsonDecode(response.body);
       } else {
-        _profile = {'error': 'Failed to fetch profile: \${response.statusCode} \${response.body}'};
+        _profile = {'error': 'Failed to fetch profile: ${response.statusCode} ${response.body}'};
       }
       notifyListeners();
     } catch (e) { 
-      _profile = {'error': 'Connection error: \$e'};
+      _profile = {'error': 'Connection error: $e'};
       notifyListeners();
       debugPrint(e.toString());
     }
@@ -55,7 +57,7 @@ class StudentProvider with ChangeNotifier {
       
       if (response.statusCode == 200) {
         await fetchProfile();
-        return null; // Success (no error string)
+        return null;
       } else {
         return jsonDecode(response.body)['message'] ?? 'Failed to update profile';
       }
@@ -74,7 +76,7 @@ class StudentProvider with ChangeNotifier {
       _isLoading = false;
       if (response.statusCode == 200) {
         await fetchProfile();
-        return null; // Success
+        return null;
       } else {
         final respStr = await response.stream.bytesToString();
         try {
@@ -168,9 +170,58 @@ class StudentProvider with ChangeNotifier {
     try {
       final response = await _apiService.get('/student/fees');
       if (response.statusCode == 200) {
-        _fees = jsonDecode(response.body);
+        final data = jsonDecode(response.body);
+        if (data is Map<String, dynamic>) {
+          _feeSummary = data;
+          _fees = data['payments'] ?? [];
+        } else if (data is List) {
+          _fees = data;
+        }
+        notifyListeners();
       }
     } catch (e) { debugPrint(e.toString()); }
+  }
+
+  Future<String?> submitPayment(double amount, List<int> fileBytes, String filename) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final response = await _apiService.postMultipartWithFields(
+        '/student/fees/payments',
+        {'amount': amount.toStringAsFixed(2)},
+        fileBytes,
+        filename,
+        'file',
+      );
+      final respStr = await response.stream.bytesToString();
+      _isLoading = false;
+
+      if (response.statusCode == 200) {
+        try {
+          final data = jsonDecode(respStr);
+          if (data is Map<String, dynamic>) {
+            _feeSummary = data;
+            _fees = data['payments'] ?? [];
+          }
+        } catch (_) {
+          await fetchFees();
+        }
+        notifyListeners();
+        return null; // Success
+      } else {
+        notifyListeners();
+        try {
+          final errMap = jsonDecode(respStr);
+          return errMap['message'] ?? 'Failed to submit payment';
+        } catch (_) {
+          return 'Failed to submit payment (${response.statusCode})';
+        }
+      }
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return 'Connection error: $e';
+    }
   }
 
   Future<void> fetchAttendance() async {

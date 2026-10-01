@@ -17,15 +17,9 @@ class ProfileTab extends StatelessWidget {
     
     final bool isIncomplete = authProvider.profileStatus == 'INCOMPLETE';
     
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Profile'),
-        backgroundColor: FTColors.surface,
-      ),
-      body: provider.isLoading 
-          ? const Center(child: FTLoading())
-          : _buildBody(context, provider.profile, isIncomplete),
-    );
+    return provider.isLoading 
+        ? const Center(child: FTLoading())
+        : _buildBody(context, provider.profile, isIncomplete);
   }
 
   Widget _buildBody(BuildContext context, Map<String, dynamic>? profile, bool isIncomplete) {

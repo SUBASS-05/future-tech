@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../core/api/api_service.dart';
 
 class AdminProvider with ChangeNotifier {
@@ -33,6 +34,17 @@ class AdminProvider with ChangeNotifier {
   List<dynamic> get rejectedAdmins => _rejectedAdmins;
   Map<String, dynamic> get capacity => _capacity;
 
+  // Top Admin Fees State
+  int _unseenPaymentCount = 0;
+  Map<String, dynamic>? _adminFeesSummary;
+  bool _isFeesLoading = false;
+  String? _feesError;
+
+  int get unseenPaymentCount => _unseenPaymentCount;
+  Map<String, dynamic>? get adminFeesSummary => _adminFeesSummary;
+  bool get isFeesLoading => _isFeesLoading;
+  String? get feesError => _feesError;
+
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
@@ -43,15 +55,10 @@ class AdminProvider with ChangeNotifier {
   Future<void> fetchProfile() async {
     _setLoading(true);
     try {
-      final response = await _apiService.get('/admins/profile');
-      if (response.statusCode == 200) {
+      final response = await _apiService.get('/admin/profile');
+      if (response.statusCode == 200 || response.statusCode == 206) {
         final data = jsonDecode(response.body);
-        _adminProfile = data;
-        _missingFields = [];
-        _error = null;
-      } else if (response.statusCode == 206) { // Incomplete profile usually returns 206 or specific payload
-        final data = jsonDecode(response.body);
-        _adminProfile = data['profile'] ?? data;
+        _adminProfile = data['profile'] is Map<String, dynamic> ? data['profile'] : data;
         _missingFields = List<String>.from(data['missingFields'] ?? []);
         _error = null;
       } else if (response.statusCode == 403) {
@@ -67,15 +74,22 @@ class AdminProvider with ChangeNotifier {
   }
 
   Future<bool> completeProfile(Map<String, dynamic> profileData) async {
+    return await updateProfile(profileData);
+  }
+
+  Future<bool> updateProfile(Map<String, dynamic> profileData) async {
     _setLoading(true);
     try {
-      final response = await _apiService.post('/admins/profile', profileData);
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      final response = await _apiService.put('/admin/profile', profileData);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _adminProfile = data['profile'] is Map<String, dynamic> ? data['profile'] : data;
+        _missingFields = List<String>.from(data['missingFields'] ?? []);
         _error = null;
-        await fetchProfile();
+        notifyListeners();
         return true;
       } else {
-        _error = jsonDecode(response.body)['message'] ?? 'Failed to save profile';
+        _error = jsonDecode(response.body)['message'] ?? 'Failed to update profile';
         return false;
       }
     } catch (e) {
@@ -86,16 +100,43 @@ class AdminProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> updateProfile(Map<String, dynamic> profileData) async {
+  Future<bool> uploadProfilePhoto(String filePath) async {
     _setLoading(true);
     try {
-      final response = await _apiService.put('/admins/profile', profileData);
+      final streamedResponse = await _apiService.postMultipart('/admin/profile/photo', filePath, 'file');
+      final response = await http.Response.fromStream(streamedResponse);
       if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _adminProfile = data['profile'] is Map<String, dynamic> ? data['profile'] : data;
+        _missingFields = List<String>.from(data['missingFields'] ?? []);
         _error = null;
-        await fetchProfile();
+        notifyListeners();
         return true;
       } else {
-        _error = jsonDecode(response.body)['message'] ?? 'Failed to update profile';
+        _error = jsonDecode(response.body)['message'] ?? 'Unable to upload profile photo. Please try again.';
+        return false;
+      }
+    } catch (e) {
+      _error = 'Unable to upload profile photo. Please try again.';
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> deleteProfilePhoto() async {
+    _setLoading(true);
+    try {
+      final response = await _apiService.delete('/admin/profile/photo');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _adminProfile = data['profile'] is Map<String, dynamic> ? data['profile'] : data;
+        _missingFields = List<String>.from(data['missingFields'] ?? []);
+        _error = null;
+        notifyListeners();
+        return true;
+      } else {
+        _error = jsonDecode(response.body)['message'] ?? 'Failed to delete photo';
         return false;
       }
     } catch (e) {
@@ -218,6 +259,70 @@ class AdminProvider with ChangeNotifier {
     }
   }
 
+  // ---- TOP ADMIN FEES MANAGEMENT ----
+
+  Future<void> fetchUnseenNotificationCount() async {
+    try {
+      final response = await _apiService.get('/admin/fees/notifications/count');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _unseenPaymentCount = data['newPayments'] ?? 0;
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error fetching notification count: $e');
+    }
+  }
+
+  Future<void> markNotificationsSeen() async {
+    try {
+      final response = await _apiService.patch('/admin/fees/notifications/mark-seen');
+      if (response.statusCode == 200) {
+        _unseenPaymentCount = 0;
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error marking notifications seen: $e');
+    }
+  }
+
+  Future<void> fetchAdminFeesSummary({String filter = 'today', String search = ''}) async {
+    _isFeesLoading = true;
+    _feesError = null;
+    notifyListeners();
+    try {
+      final queryParams = StringBuffer('filter=$filter');
+      if (search.trim().isNotEmpty) {
+        queryParams.write('&search=${Uri.encodeComponent(search.trim())}');
+      }
+      final response = await _apiService.get('/admin/fees/summary?$queryParams');
+      if (response.statusCode == 200) {
+        _adminFeesSummary = jsonDecode(response.body);
+      } else if (response.statusCode == 403) {
+        _feesError = '403 FORBIDDEN: Only TOP_ADMIN can access fee management.';
+      } else {
+        _feesError = 'Failed to load fee summary (${response.statusCode})';
+      }
+    } catch (e) {
+      _feesError = 'Connection error: $e';
+    } finally {
+      _isFeesLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<Map<String, dynamic>?> fetchAdminStudentFeeDetails(String studentId) async {
+    try {
+      final response = await _apiService.get('/admin/fees/student/$studentId');
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      debugPrint('Error fetching student fee details: $e');
+    }
+    return null;
+  }
+
   // ---- RESTORED STUDENT & TASK MANAGEMENT METHODS ----
   
   bool get isLoading => _isLoading;
@@ -231,7 +336,7 @@ class AdminProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         _pendingRequests = jsonDecode(response.body);
       }
-    } catch (e) { print(e); }
+    } catch (e) { debugPrint(e.toString()); }
     _setLoading(false);
   }
 
@@ -242,7 +347,7 @@ class AdminProvider with ChangeNotifier {
         await fetchPendingRequests();
         return true;
       }
-    } catch (e) { print(e); }
+    } catch (e) { debugPrint(e.toString()); }
     return false;
   }
 
@@ -253,29 +358,122 @@ class AdminProvider with ChangeNotifier {
         await fetchPendingRequests();
         return true;
       }
-    } catch (e) { print(e); }
+    } catch (e) { debugPrint(e.toString()); }
     return false;
+  }
+
+  // ---- TASKS & STUDENT ASSIGNMENT ----
+
+  List<dynamic> _students = [];
+  List<dynamic> _tasks = [];
+
+  List<dynamic> get students => _students;
+  List<dynamic> get tasks => _tasks;
+
+  Future<void> fetchStudents() async {
+    try {
+      final response = await _apiService.get('/admin/students');
+      if (response.statusCode == 200) {
+        _students = jsonDecode(response.body);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('fetchStudents error: $e');
+    }
+  }
+
+  Future<void> fetchTasks() async {
+    try {
+      final response = await _apiService.get('/admin/tasks');
+      if (response.statusCode == 200) {
+        _tasks = jsonDecode(response.body);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('fetchTasks error: $e');
+    }
+  }
+
+  Future<List<dynamic>> fetchTaskHistory() async {
+    try {
+      final response = await _apiService.get('/admin/tasks/history');
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      debugPrint('fetchTaskHistory error: $e');
+    }
+    return [];
+  }
+
+  Future<dynamic> getTaskProgress(dynamic taskId) async {
+    try {
+      final response = await _apiService.get('/admin/tasks/$taskId/progress');
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      debugPrint('getTaskProgress error: $e');
+    }
+    return null;
   }
 
   Future<String?> createTask(
     String title, 
     String description, 
-    String targetType, 
-    dynamic targetId, 
+    String priority, 
+    DateTime? dueDate, 
     int? estimatedMinutes, 
-    List<int>? studentIds
+    List<int> studentIds
   ) async {
     _setLoading(true);
-    _setLoading(false);
-    return null;
+    try {
+      final dueAtIso = dueDate != null ? dueDate.toUtc().toIso8601String() : DateTime.now().add(const Duration(days: 1)).toUtc().toIso8601String();
+      final body = {
+        'title': title,
+        'description': description,
+        'priority': priority,
+        'dueAt': dueAtIso,
+        'estimatedMinutes': estimatedMinutes,
+        'studentIds': studentIds,
+      };
+      final response = await _apiService.post('/admin/tasks', body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        _error = null;
+        await fetchTasks();
+        return null;
+      } else {
+        final data = jsonDecode(response.body);
+        _error = data['message'] ?? 'Failed to create task';
+        return _error;
+      }
+    } catch (e) {
+      _error = 'Connection error: $e';
+      return _error;
+    } finally {
+      _setLoading(false);
+    }
   }
 
-  // Dummy methods for missing calls in tasks_tab.dart
-  List<dynamic> get students => [];
-  List<dynamic> get tasks => [];
-  
-  Future<void> fetchStudents() async {}
-  Future<void> fetchTasks() async {}
-  Future<List<dynamic>> fetchTaskHistory() async { return []; }
-  Future<double> getTaskProgress(dynamic taskId) async { return 0.0; }
+  Future<bool> deleteTask(dynamic taskId) async {
+    _setLoading(true);
+    try {
+      final response = await _apiService.delete('/admin/tasks/$taskId');
+      if (response.statusCode == 200) {
+        _error = null;
+        await fetchTasks();
+        notifyListeners();
+        return true;
+      } else {
+        final data = jsonDecode(response.body);
+        _error = data['message'] ?? 'Failed to delete task';
+        return false;
+      }
+    } catch (e) {
+      _error = 'Connection error: $e';
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
 }

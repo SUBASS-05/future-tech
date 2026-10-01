@@ -115,7 +115,8 @@ class _TasksTabState extends State<TasksTab> {
                         itemCount: students.length,
                         itemBuilder: (context, index) {
                           final student = students[index];
-                          final isSelected = _selectedStudentIds.contains(student['studentId']);
+                          final sId = student['studentId'] ?? student['id'];
+                          final isSelected = _selectedStudentIds.contains(sId);
                           return ListTile(
                             leading: Checkbox(
                               value: isSelected,
@@ -123,16 +124,16 @@ class _TasksTabState extends State<TasksTab> {
                               onChanged: (val) {
                                 setModalState(() {
                                   if (val == true) {
-                                    _selectedStudentIds.add(student['studentId']);
+                                    if (sId != null) _selectedStudentIds.add(sId);
                                   } else {
-                                    _selectedStudentIds.remove(student['studentId']);
+                                    if (sId != null) _selectedStudentIds.remove(sId);
                                   }
                                 });
                                 setState(() {});
                               },
                             ),
-                            title: Text(student['fullName'] ?? 'Unknown'),
-                            subtitle: Text(student['institutionName'] ?? ''),
+                            title: Text(student['fullName'] ?? student['name'] ?? 'Unknown Student'),
+                            subtitle: Text(student['institutionName'] ?? student['email'] ?? ''),
                           );
                         },
                       ),
@@ -527,6 +528,49 @@ class _TasksTabState extends State<TasksTab> {
     );
   }
 
+  Future<void> _confirmDeleteTask(BuildContext context, dynamic task, {required bool isHistory}) async {
+    final taskId = task['id'];
+    final taskTitle = task['title'] ?? 'Task';
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Task'),
+        content: Text('Are you sure you want to permanently delete "$taskTitle"? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      final success = await context.read<AdminProvider>().deleteTask(taskId);
+      if (mounted) {
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Task deleted successfully.'), backgroundColor: Colors.green),
+          );
+          if (isHistory) {
+            _fetchHistory();
+          }
+        } else {
+          final errorMsg = context.read<AdminProvider>().error ?? 'Failed to delete task.';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
+          );
+        }
+      }
+    }
+  }
+
   Widget _buildTaskCard(dynamic task, {required bool isHistory}) {
     final priority = task['priority'] ?? 'MEDIUM';
     Color priorityColor = priority == 'HIGH' ? Colors.red : priority == 'LOW' ? Colors.green : Colors.orange;
@@ -567,6 +611,26 @@ class _TasksTabState extends State<TasksTab> {
                   priority,
                   style: TextStyle(fontSize: 12, color: priorityColor, fontWeight: FontWeight.bold),
                 ),
+              ),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, color: Colors.grey),
+                onSelected: (value) {
+                  if (value == 'delete') {
+                    _confirmDeleteTask(context, task, isHistory: isHistory);
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem<String>(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                        SizedBox(width: 8),
+                        Text('Delete Task', style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

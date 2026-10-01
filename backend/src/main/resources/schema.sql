@@ -92,17 +92,20 @@ CREATE TABLE fee_records (
 
 CREATE TABLE payments (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    fee_record_id BIGINT NOT NULL,
+    payment_id VARCHAR(100) NOT NULL UNIQUE,
     student_id BIGINT NOT NULL,
+    fee_record_id BIGINT NULL,
+    fee_cycle_start DATE NOT NULL,
+    fee_cycle_end DATE NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
-    payment_date DATE NOT NULL,
-    payment_method ENUM('CASH', 'UPI', 'BANK_TRANSFER', 'CARD') NOT NULL,
-    transaction_id VARCHAR(255),
-    receipt_number VARCHAR(100) UNIQUE,
-    remarks TEXT,
+    payment_proof_url VARCHAR(500) NOT NULL,
+    payment_date DATETIME NOT NULL,
+    is_seen_by_top_admin BOOLEAN DEFAULT FALSE,
+    seen_at DATETIME,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (fee_record_id) REFERENCES fee_records(id) ON DELETE CASCADE,
-    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (fee_record_id) REFERENCES fee_records(id) ON DELETE SET NULL
 );
 
 CREATE TABLE attendance (

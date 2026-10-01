@@ -110,7 +110,9 @@ public class AuthServiceImpl implements AuthService {
         
         // Enforce role check if role is provided
         if (request.getRole() != null && !request.getRole().isEmpty()) {
-            if (!user.getUserType().name().equalsIgnoreCase(request.getRole())) {
+            boolean isMatch = user.getUserType().name().equalsIgnoreCase(request.getRole())
+                    || (user.getUserType() == UserType.TOP_ADMIN && "ADMIN".equalsIgnoreCase(request.getRole()));
+            if (!isMatch) {
                 throw new RuntimeException("Login failed: Selected role does not match user account type.");
             }
         }

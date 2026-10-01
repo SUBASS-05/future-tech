@@ -1,11 +1,24 @@
 package com.futuretech.service;
+
 import com.futuretech.dto.*;
-import com.futuretech.entity.FeeRecord;
-import com.futuretech.entity.Payment;
+import org.springframework.web.multipart.MultipartFile;
+import java.math.BigDecimal;
 import java.util.List;
+
 public interface FinanceService {
-    MessageResponse createFee(FeeRequest request);
-    MessageResponse recordPayment(PaymentRequest request);
-    List<FeeRecord> getStudentFees(Long studentId);
-    List<Payment> getStudentPayments(Long studentId);
+    StudentFeeSummaryResponse getStudentFeeSummary(String email);
+
+    List<PaymentDTO> getStudentPayments(String email);
+
+    StudentFeeSummaryResponse submitStudentPayment(String email, BigDecimal amount, MultipartFile file);
+
+    AdminFeesSummaryResponse getAdminFeesSummary(String filter, String search);
+
+    List<PaymentDTO> getAdminFeesPayments(String filter, String search);
+
+    AdminStudentFeeDetailsResponse getAdminStudentFeeDetails(String studentId);
+
+    NotificationCountResponse getUnseenNotificationCount();
+
+    MessageResponse markNotificationsSeen();
 }

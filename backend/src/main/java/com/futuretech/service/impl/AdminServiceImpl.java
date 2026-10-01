@@ -34,11 +34,17 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public List<StudentRequestDTO> getApprovedStudents() {
-        return studentRepository.findByStatus(StudentStatus.APPROVED)
+        List<StudentStatus> allowedStatuses = List.of(
+                StudentStatus.APPROVED,
+                StudentStatus.ACTIVE,
+                StudentStatus.PENDING_APPROVAL
+        );
+        return studentRepository.findByStatusIn(allowedStatuses)
                 .stream().map(student -> StudentRequestDTO.builder()
                         .studentId(student.getId())
-                        .fullName(student.getFirstName() + " " + (student.getLastName() != null ? student.getLastName() : ""))
-                        .email(student.getUser().getEmail())
+                        .fullName((student.getFirstName() != null ? student.getFirstName() : "") + 
+                                  (student.getLastName() != null && !student.getLastName().isEmpty() ? " " + student.getLastName() : ""))
+                        .email(student.getUser() != null ? student.getUser().getEmail() : "")
                         .institutionName(student.getInstitution() != null ? student.getInstitution().getInstitutionName() : "N/A")
                         .tuitionJoiningDate(student.getTuitionJoiningDate() != null ? student.getTuitionJoiningDate().toLocalDate().toString() : null)
                         .status(student.getStatus().name())

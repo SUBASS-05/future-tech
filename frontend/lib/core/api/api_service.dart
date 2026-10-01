@@ -3,10 +3,9 @@ import 'package:http/http.dart' as http;
 import '../../data/secure_storage/secure_storage.dart';
 
 class ApiService {
-  // 127.0.0.1 only works on emulator/PC browser.
-  // For a real Android device, use your PC's local Wi-Fi IP address.
-  // Run `ipconfig` on PC → look for Wi-Fi IPv4 address (e.g. 192.168.x.x)
-  static const String baseUrl = 'http://192.168.31.149:8080/api';
+  // Current Wi-Fi IPv4 address of host server
+  static const String baseUrl = 'http://10.93.141.72:8080/api';
+  static const Duration timeoutDuration = Duration(seconds: 15);
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await SecureStorage.getToken();
@@ -24,13 +23,13 @@ class ApiService {
       url,
       headers: headers,
       body: jsonEncode(body),
-    );
+    ).timeout(timeoutDuration);
   }
 
   Future<http.Response> get(String endpoint) async {
     final url = Uri.parse('$baseUrl$endpoint');
     final headers = await _getHeaders();
-    return await http.get(url, headers: headers);
+    return await http.get(url, headers: headers).timeout(timeoutDuration);
   }
 
   Future<http.Response> put(String endpoint, Map<String, dynamic> body) async {
@@ -40,13 +39,23 @@ class ApiService {
       url,
       headers: headers,
       body: jsonEncode(body),
-    );
+    ).timeout(timeoutDuration);
+  }
+
+  Future<http.Response> patch(String endpoint, [Map<String, dynamic>? body]) async {
+    final url = Uri.parse('$baseUrl$endpoint');
+    final headers = await _getHeaders();
+    return await http.patch(
+      url,
+      headers: headers,
+      body: body != null ? jsonEncode(body) : null,
+    ).timeout(timeoutDuration);
   }
 
   Future<http.Response> delete(String endpoint) async {
     final url = Uri.parse('$baseUrl$endpoint');
     final headers = await _getHeaders();
-    return await http.delete(url, headers: headers);
+    return await http.delete(url, headers: headers).timeout(timeoutDuration);
   }
 
   Future<http.StreamedResponse> postMultipart(String endpoint, String filePath, String fileField) async {
@@ -64,6 +73,17 @@ class ApiService {
     var request = http.MultipartRequest('POST', url);
     if (token != null) request.headers['Authorization'] = 'Bearer $token';
     request.files.add(http.MultipartFile.fromBytes(fileField, bytes, filename: filename));
+    return await request.send();
+  }
+
+  Future<http.StreamedResponse> postMultipartWithFields(
+      String endpoint, Map<String, String> fields, List<int> fileBytes, String filename, String fileField) async {
+    final url = Uri.parse('$baseUrl$endpoint');
+    final token = await SecureStorage.getToken();
+    var request = http.MultipartRequest('POST', url);
+    if (token != null) request.headers['Authorization'] = 'Bearer $token';
+    request.fields.addAll(fields);
+    request.files.add(http.MultipartFile.fromBytes(fileField, fileBytes, filename: filename));
     return await request.send();
   }
 }
