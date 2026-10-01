@@ -112,7 +112,7 @@ CREATE TABLE attendance (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     student_id BIGINT NOT NULL,
     attendance_date DATE NOT NULL,
-    status ENUM('PRESENT', 'ABSENT') NOT NULL,
+    status VARCHAR(50) NOT NULL,
     remarks VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY unique_student_date (student_id, attendance_date),

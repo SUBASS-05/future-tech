@@ -22,8 +22,8 @@ class _AdminManagementTabState extends State<AdminManagementTab> with SingleTick
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final provider = context.read<AdminProvider>();
       await provider.fetchAdminManagementData();
-      if (provider.error == 'Session expired or suspended.' && mounted) {
-        context.read<AuthProvider>().logout();
+      if (provider.error != null && mounted) {
+        _showError(provider.error!);
       }
     });
   }
@@ -203,15 +203,27 @@ class _AdminManagementTabState extends State<AdminManagementTab> with SingleTick
   }
 
   Widget _buildList(List<dynamic> admins, List<Widget> Function(dynamic admin) actionsBuilder) {
-    if (admins.isEmpty) {
-      return const Center(child: Text('No records found.'));
-    }
-    return ListView.builder(
-      itemCount: admins.length,
-      itemBuilder: (context, index) {
-        final admin = admins[index];
-        return _buildAdminCard(admin, actionsBuilder(admin));
-      },
+    return RefreshIndicator(
+      color: FTColors.primary,
+      onRefresh: () => context.read<AdminProvider>().fetchAdminManagementData(),
+      child: admins.isEmpty
+          ? ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.5,
+                  child: const Center(child: Text('No records found.')),
+                ),
+              ],
+            )
+          : ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              itemCount: admins.length,
+              itemBuilder: (context, index) {
+                final admin = admins[index];
+                return _buildAdminCard(admin, actionsBuilder(admin));
+              },
+            ),
     );
   }
 

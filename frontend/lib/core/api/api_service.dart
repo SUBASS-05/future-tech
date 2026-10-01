@@ -4,7 +4,7 @@ import '../../data/secure_storage/secure_storage.dart';
 
 class ApiService {
   // Current Wi-Fi IPv4 address of host server
-  static const String baseUrl = 'http://10.93.141.72:8080/api';
+  static const String baseUrl = 'http://192.168.31.149:8080/api';
   static const Duration timeoutDuration = Duration(seconds: 15);
 
   Future<Map<String, String>> _getHeaders() async {

@@ -9,6 +9,7 @@ import 'tabs/tasks_tab.dart';
 import 'tabs/admin_management_tab.dart';
 import 'tabs/admin_profile_tab.dart';
 import 'tabs/admin_fees_tab.dart';
+import 'tabs/admin_attendance_tab.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -16,19 +17,52 @@ class AdminDashboard extends StatefulWidget {
   State<AdminDashboard> createState() => _AdminDashboardState();
 }
 
-class _AdminDashboardState extends State<AdminDashboard> {
+class _AdminDashboardState extends State<AdminDashboard> with WidgetsBindingObserver {
   int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final isTopAdmin = context.read<AuthProvider>().role == 'TOP_ADMIN';
       if (isTopAdmin) {
         context.read<AdminProvider>().fetchUnseenNotificationCount();
       }
       context.read<AdminProvider>().fetchProfile();
+      _refreshCurrentTab(0, isTopAdmin);
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      final isTopAdmin = context.read<AuthProvider>().role == 'TOP_ADMIN';
+      _refreshCurrentTab(_currentIndex, isTopAdmin);
+    }
+  }
+
+  void _refreshCurrentTab(int index, bool isTopAdmin) {
+    final provider = context.read<AdminProvider>();
+    if (index == 0) {
+      provider.fetchPendingRequests();
+    } else if (index == 1) {
+      provider.fetchTasks();
+      provider.fetchStudents();
+    } else if (index == 2) {
+      provider.fetchDailyAttendance(DateTime.now());
+      provider.fetchLeaveRequests();
+    } else if (index == 3 && isTopAdmin) {
+      provider.fetchAdminFeesSummary();
+    } else if (index == 4 && isTopAdmin) {
+      provider.fetchAdminManagementData();
+    }
   }
 
   String? _getFormattedPhotoUrl(String? rawUrl) {
@@ -62,7 +96,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     tabs.add(const TasksTab());
     navItems.add(const BottomNavigationBarItem(icon: Icon(Icons.assignment), label: 'Tasks'));
 
-    tabs.add(const Center(child: Text('Attendance - Coming Soon')));
+    tabs.add(const AdminAttendanceTab());
     navItems.add(const BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Attendance'));
 
     // Top Admin Only Tabs
@@ -86,10 +120,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
       navItems.add(const BottomNavigationBarItem(icon: Icon(Icons.manage_accounts), label: 'Admins'));
     }
 
-    // Profile Tab
-    tabs.add(const AdminProfileTab());
-    navItems.add(const BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'));
-
     if (_currentIndex >= tabs.length) {
       _currentIndex = 0;
     }
@@ -108,9 +138,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   child: photoUrl == null ? const Icon(Icons.person, color: FTColors.surface) : null,
                 ),
                 onPressed: () {
-                  setState(() {
-                    _currentIndex = tabs.length - 1; // Profile tab
-                  });
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => Scaffold(
+                        appBar: AppBar(title: const Text('Admin Profile')),
+                        body: const AdminProfileTab(),
+                      ),
+                    ),
+                  );
                 },
               ),
               if (!isProfileCompleted)
@@ -142,6 +178,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           setState(() {
             _currentIndex = index;
           });
+          _refreshCurrentTab(index, isTopAdmin);
           if (isTopAdmin && feesTabIndex != null && index == feesTabIndex) {
             context.read<AdminProvider>().markNotificationsSeen();
           }

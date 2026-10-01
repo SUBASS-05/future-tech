@@ -29,8 +29,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**", "/uploads/**").permitAll()
                 .requestMatchers("/api/top-admin/**").hasRole("TOP_ADMIN")
+                .requestMatchers("/api/admins/management/**").hasRole("TOP_ADMIN")
                 .requestMatchers("/api/admin/fees/**").hasRole("TOP_ADMIN")
-                .requestMatchers("/api/admin/tasks/**", "/api/admin/attendance/**", "/api/admin/students/**").hasAnyRole("TOP_ADMIN", "ADMIN")
+                .requestMatchers("/api/admin/tasks/**", "/api/admin/attendance/**", "/api/admin/students/**", "/api/admin/leaves/**").hasAnyRole("TOP_ADMIN", "ADMIN")
                 .requestMatchers("/api/admin/**").hasAnyRole("TOP_ADMIN", "ADMIN")
                 .requestMatchers("/api/student/**").hasRole("STUDENT")
                 .anyRequest().authenticated()

@@ -13,3 +13,14 @@ String formatDateTime(String? isoString) {
     return isoString;
   }
 }
+
+String formatDate(String? isoString) {
+  if (isoString == null) return 'N/A';
+  try {
+    final dt = DateTime.parse(isoString).toLocal();
+    final months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return '${dt.day} ${months[dt.month-1]} ${dt.year}';
+  } catch (_) {
+    return isoString;
+  }
+}

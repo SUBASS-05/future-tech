@@ -476,4 +476,135 @@ class AdminProvider with ChangeNotifier {
       _setLoading(false);
     }
   }
+
+  // ---- ATTENDANCE & LEAVES ----
+  Map<String, dynamic>? _dailyAttendance;
+  Map<String, dynamic>? get dailyAttendance => _dailyAttendance;
+
+  List<dynamic> _lowAttendanceStudents = [];
+  List<dynamic> get lowAttendanceStudents => _lowAttendanceStudents;
+
+  List<dynamic> _leaveRequests = [];
+  List<dynamic> get leaveRequests => _leaveRequests;
+
+  Future<void> fetchDailyAttendance(DateTime date) async {
+    _setLoading(true);
+    try {
+      final dateStr = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+      final response = await _apiService.get('/admin/attendance?date=$dateStr');
+      if (response.statusCode == 200) {
+        _dailyAttendance = jsonDecode(response.body);
+        _error = null;
+      } else {
+        _error = 'Failed to load attendance';
+      }
+    } catch (e) {
+      _error = 'Connection error: $e';
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> markAttendance(int studentId, DateTime date, String status, {String? remarks}) async {
+    _setLoading(true);
+    try {
+      final dateStr = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+      final body = {
+        'studentId': studentId,
+        'attendanceDate': dateStr,
+        'status': status,
+        'remarks': remarks,
+      };
+      final response = await _apiService.post('/admin/attendance', body);
+      if (response.statusCode == 200) {
+        await fetchDailyAttendance(date);
+        return true;
+      } else {
+        final data = jsonDecode(response.body);
+        _error = data['message'] ?? 'Failed to mark attendance';
+        return false;
+      }
+    } catch (e) {
+      _error = 'Connection error: $e';
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> bulkMarkAttendance(DateTime date, String status, {List<int>? studentIds, String? remarks}) async {
+    _setLoading(true);
+    try {
+      final dateStr = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+      final body = {
+        'attendanceDate': dateStr,
+        'status': status,
+        'studentIds': studentIds,
+        'remarks': remarks,
+      };
+      final response = await _apiService.post('/admin/attendance/bulk', body);
+      if (response.statusCode == 200) {
+        await fetchDailyAttendance(date);
+        return true;
+      } else {
+        final data = jsonDecode(response.body);
+        _error = data['message'] ?? 'Failed to bulk mark attendance';
+        return false;
+      }
+    } catch (e) {
+      _error = 'Connection error: $e';
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> fetchLowAttendanceStudents({double threshold = 75.0}) async {
+    try {
+      final response = await _apiService.get('/admin/attendance/reports/low-attendance?threshold=$threshold');
+      if (response.statusCode == 200) {
+        _lowAttendanceStudents = jsonDecode(response.body);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('fetchLowAttendanceStudents error: $e');
+    }
+  }
+
+  Future<void> fetchLeaveRequests({String? status}) async {
+    try {
+      final url = status != null ? '/admin/leaves?status=$status' : '/admin/leaves';
+      final response = await _apiService.get(url);
+      if (response.statusCode == 200) {
+        _leaveRequests = jsonDecode(response.body);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('fetchLeaveRequests error: $e');
+    }
+  }
+
+  Future<bool> reviewLeaveRequest(int leaveId, String status, {String? adminRemarks}) async {
+    _setLoading(true);
+    try {
+      final body = {
+        'status': status,
+        'adminRemarks': adminRemarks,
+      };
+      final response = await _apiService.post('/admin/leaves/$leaveId/review', body);
+      if (response.statusCode == 200) {
+        await fetchLeaveRequests();
+        return true;
+      } else {
+        final data = jsonDecode(response.body);
+        _error = data['message'] ?? 'Failed to review leave request';
+        return false;
+      }
+    } catch (e) {
+      _error = 'Connection error: $e';
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
 }

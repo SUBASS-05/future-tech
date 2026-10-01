@@ -19,7 +19,7 @@ public class Attendance {
     @Column(name = "attendance_date", nullable = false) private LocalDate attendanceDate;
     
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false) private AttendanceStatus status;
+    @Column(name = "status", nullable = false, length = 50) private AttendanceStatus status;
     
     private String remarks;
     

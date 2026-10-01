@@ -44,10 +44,6 @@ public class StudentFeatureController {
         return ResponseEntity.ok(financeService.submitStudentPayment(auth.getName(), amount, file));
     }
 
-    @GetMapping("/attendance")
-    public ResponseEntity<List<Attendance>> getAttendance(Authentication auth) {
-        return ResponseEntity.ok(attendanceService.getStudentAttendance(1L)); // Handled by AttendanceService
-    }
 
     @GetMapping("/tasks")
     public ResponseEntity<List<StudentTaskResponse>> getTasks(Authentication auth) {

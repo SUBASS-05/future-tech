@@ -224,12 +224,62 @@ class StudentProvider with ChangeNotifier {
     }
   }
 
+  Map<String, dynamic>? _attendanceSummary;
+  Map<String, dynamic>? get attendanceSummary => _attendanceSummary;
+
+  List<dynamic> _leaveRequests = [];
+  List<dynamic> get leaveRequests => _leaveRequests;
+
   Future<void> fetchAttendance() async {
     try {
-      final response = await _apiService.get('/student/attendance');
+      final response = await _apiService.get('/student/attendance/summary');
       if (response.statusCode == 200) {
-        _attendance = jsonDecode(response.body);
+        _attendanceSummary = jsonDecode(response.body);
+        _attendance = _attendanceSummary?['history'] ?? [];
+        notifyListeners();
       }
-    } catch (e) { debugPrint(e.toString()); }
+    } catch (e) {
+      debugPrint('fetchAttendance error: $e');
+    }
+  }
+
+  Future<void> fetchLeaveRequests() async {
+    try {
+      final response = await _apiService.get('/student/leaves');
+      if (response.statusCode == 200) {
+        _leaveRequests = jsonDecode(response.body);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('fetchLeaveRequests error: $e');
+    }
+  }
+
+  Future<String?> applyLeave(DateTime startDate, DateTime endDate, String reason) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final startStr = "${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}";
+      final endStr = "${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}";
+      final body = {
+        'startDate': startStr,
+        'endDate': endStr,
+        'reason': reason,
+      };
+      final response = await _apiService.post('/student/leaves', body);
+      _isLoading = false;
+      notifyListeners();
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        await fetchLeaveRequests();
+        return null;
+      } else {
+        final data = jsonDecode(response.body);
+        return data['message'] ?? 'Failed to submit leave request';
+      }
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return 'Connection error: $e';
+    }
   }
 }
