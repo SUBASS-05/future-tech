@@ -1,9 +1,66 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../core/api/api_service.dart';
+import '../core/websocket/sync_event.dart';
+import '../core/websocket/websocket_service.dart';
 
 class StudentProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
+  StreamSubscription<SyncEvent>? _eventSubscription;
+
+  StudentProvider() {
+    initSync();
+  }
+
+  void initSync() {
+    _eventSubscription?.cancel();
+    _eventSubscription = WebSocketService().eventStream.listen(_handleSyncEvent);
+  }
+
+  void _handleSyncEvent(SyncEvent event) {
+    debugPrint('[StudentProvider] Real-time event received: ${event.eventType}');
+    switch (event.eventType) {
+      case 'WS_RECONNECTED':
+        fetchAllData();
+        fetchLeaveRequests();
+        break;
+      case 'STUDENT_APPROVED':
+      case 'STUDENT_REJECTED':
+      case 'STUDENT_PROFILE_UPDATED':
+      case 'USER_DATA_UPDATED':
+        fetchProfile();
+        break;
+      case 'PAYMENT_CREATED':
+      case 'PAYMENT_UPDATED':
+      case 'PAYMENT_STATUS_UPDATED':
+      case 'FEE_STATUS_UPDATED':
+        fetchFees();
+        break;
+      case 'ATTENDANCE_UPDATED':
+        fetchAttendance();
+        break;
+      case 'TASK_CREATED':
+      case 'TASK_UPDATED':
+      case 'TASK_DELETED':
+      case 'TASK_STATUS_UPDATED':
+        fetchTasks();
+        break;
+      case 'LEAVE_REQUEST_CREATED':
+      case 'LEAVE_REQUEST_UPDATED':
+      case 'LEAVE_REQUEST_APPROVED':
+      case 'LEAVE_REQUEST_REJECTED':
+        fetchLeaveRequests();
+        fetchAttendance();
+        break;
+    }
+  }
+
+  @override
+  void dispose() {
+    _eventSubscription?.cancel();
+    super.dispose();
+  }
   bool _isLoading = false;
   Map<String, dynamic>? _profile;
   List<dynamic> _tasks = [];
@@ -18,17 +75,21 @@ class StudentProvider with ChangeNotifier {
   List<dynamic> get fees => _fees;
   List<dynamic> get attendance => _attendance;
 
-  Future<void> fetchAllData() async {
-    _isLoading = true;
-    notifyListeners();
+  Future<void> fetchAllData({bool silent = false}) async {
+    if (!silent && _profile == null) {
+      _isLoading = true;
+      notifyListeners();
+    }
     await Future.wait([
       fetchProfile(),
       fetchTasks(),
       fetchFees(),
       fetchAttendance()
     ]);
-    _isLoading = false;
-    notifyListeners();
+    if (_isLoading) {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> fetchProfile() async {
@@ -136,6 +197,7 @@ class StudentProvider with ChangeNotifier {
       final response = await _apiService.get('/student/tasks');
       if (response.statusCode == 200) {
         _tasks = jsonDecode(response.body);
+        notifyListeners();
       }
     } catch (e) { debugPrint(e.toString()); }
   }

@@ -29,6 +29,7 @@ public class StudentServiceImpl implements StudentService {
     private final InstitutionRepository institutionRepository;
     private final DepartmentRepository departmentRepository;
     private final FileStorageService fileStorageService;
+    private final com.futuretech.service.WebSocketEventPublisher eventPublisher;
 
     @Override
     public StudentProfileDTO getProfile(String email) {
@@ -139,6 +140,9 @@ public class StudentServiceImpl implements StudentService {
 
         student.setProfileStatus(ProfileStatus.COMPLETED);
         studentRepository.save(student);
+
+        eventPublisher.publishToUser(email, "STUDENT_PROFILE_UPDATED", "STUDENT", student.getId());
+        eventPublisher.publishToAdmin("STUDENT_PROFILE_UPDATED", "STUDENT", student.getId());
 
         return new MessageResponse("Profile updated successfully");
     }

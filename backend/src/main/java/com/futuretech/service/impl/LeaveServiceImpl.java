@@ -21,6 +21,7 @@ public class LeaveServiceImpl implements LeaveService {
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
     private final AttendanceRepository attendanceRepository;
+    private final com.futuretech.service.WebSocketEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -48,7 +49,11 @@ public class LeaveServiceImpl implements LeaveService {
                 .status(LeaveStatus.PENDING)
                 .build();
 
-        leaveRequestRepository.save(leave);
+        leave = leaveRequestRepository.save(leave);
+
+        eventPublisher.publishToUser(studentEmail, "LEAVE_REQUEST_CREATED", "LEAVE_REQUEST", leave.getId());
+        eventPublisher.publishToAdmin("LEAVE_REQUEST_CREATED", "LEAVE_REQUEST", leave.getId());
+
         return new MessageResponse("Leave request submitted successfully");
     }
 
@@ -120,6 +125,13 @@ public class LeaveServiceImpl implements LeaveService {
                 curr = curr.plusDays(1);
             }
         }
+
+        String eventType = newStatus == LeaveStatus.APPROVED ? "LEAVE_REQUEST_APPROVED" :
+                          (newStatus == LeaveStatus.REJECTED ? "LEAVE_REQUEST_REJECTED" : "LEAVE_REQUEST_UPDATED");
+        if (leave.getStudent() != null && leave.getStudent().getUser() != null && leave.getStudent().getUser().getEmail() != null) {
+            eventPublisher.publishToUser(leave.getStudent().getUser().getEmail(), eventType, "LEAVE_REQUEST", leave.getId());
+        }
+        eventPublisher.publishToAdmin(eventType, "LEAVE_REQUEST", leave.getId());
 
         return new MessageResponse("Leave request " + newStatus.name().toLowerCase());
     }

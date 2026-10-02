@@ -1,10 +1,75 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../core/api/api_service.dart';
+import '../core/websocket/sync_event.dart';
+import '../core/websocket/websocket_service.dart';
 
 class AdminProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
+  StreamSubscription<SyncEvent>? _eventSubscription;
+
+  AdminProvider() {
+    initSync();
+  }
+
+  void initSync() {
+    _eventSubscription?.cancel();
+    _eventSubscription = WebSocketService().eventStream.listen(_handleSyncEvent);
+  }
+
+  void _handleSyncEvent(SyncEvent event) {
+    debugPrint('[AdminProvider] Real-time event received: ${event.eventType}');
+    switch (event.eventType) {
+      case 'WS_RECONNECTED':
+        fetchProfile();
+        fetchAdminFeesSummary(silent: true);
+        fetchUnseenNotificationCount();
+        fetchPendingRequests(silent: true);
+        fetchStudents(silent: true);
+        fetchTasks(silent: true);
+        fetchLeaveRequests();
+        break;
+      case 'STUDENT_APPROVED':
+      case 'STUDENT_REJECTED':
+      case 'STUDENT_PROFILE_UPDATED':
+      case 'USER_DATA_UPDATED':
+        fetchPendingRequests(silent: true);
+        fetchStudents(silent: true);
+        fetchAdminManagementData(silent: true);
+        break;
+      case 'PAYMENT_CREATED':
+      case 'PAYMENT_UPDATED':
+      case 'PAYMENT_STATUS_UPDATED':
+      case 'FEE_STATUS_UPDATED':
+        fetchAdminFeesSummary(silent: true);
+        fetchUnseenNotificationCount();
+        break;
+      case 'ATTENDANCE_UPDATED':
+        fetchDailyAttendance(DateTime.now(), silent: true);
+        break;
+      case 'TASK_CREATED':
+      case 'TASK_UPDATED':
+      case 'TASK_DELETED':
+      case 'TASK_STATUS_UPDATED':
+        fetchTasks(silent: true);
+        break;
+      case 'LEAVE_REQUEST_CREATED':
+      case 'LEAVE_REQUEST_UPDATED':
+      case 'LEAVE_REQUEST_APPROVED':
+      case 'LEAVE_REQUEST_REJECTED':
+        fetchLeaveRequests();
+        fetchDailyAttendance(DateTime.now(), silent: true);
+        break;
+    }
+  }
+
+  @override
+  void dispose() {
+    _eventSubscription?.cancel();
+    super.dispose();
+  }
 
   bool _isLoading = false;
   String? _error;
@@ -149,8 +214,8 @@ class AdminProvider with ChangeNotifier {
 
   // ---- ADMIN MANAGEMENT (TOP ADMIN ONLY) ----
 
-  Future<void> fetchAdminManagementData() async {
-    _setLoading(true);
+  Future<void> fetchAdminManagementData({bool silent = false}) async {
+    if (!silent && _activeAdmins.isEmpty) _setLoading(true);
     try {
       final response = await _apiService.get('/admins/management');
       if (response.statusCode == 200) {
@@ -165,6 +230,7 @@ class AdminProvider with ChangeNotifier {
           'pendingRequests': _pendingAdmins.length,
         };
         _error = null;
+        notifyListeners();
       } else if (response.statusCode == 403) {
         _error = 'Session expired or suspended.';
       } else {
@@ -173,7 +239,7 @@ class AdminProvider with ChangeNotifier {
     } catch (e) {
       _error = 'Connection error: $e';
     } finally {
-      _setLoading(false);
+      if (!silent && _activeAdmins.isEmpty) _setLoading(false);
     }
   }
 
@@ -286,10 +352,12 @@ class AdminProvider with ChangeNotifier {
     }
   }
 
-  Future<void> fetchAdminFeesSummary({String filter = 'today', String search = ''}) async {
-    _isFeesLoading = true;
-    _feesError = null;
-    notifyListeners();
+  Future<void> fetchAdminFeesSummary({String filter = 'today', String search = '', bool silent = false}) async {
+    if (!silent && _adminFeesSummary == null) {
+      _isFeesLoading = true;
+      _feesError = null;
+      notifyListeners();
+    }
     try {
       final queryParams = StringBuffer('filter=$filter');
       if (search.trim().isNotEmpty) {
@@ -298,6 +366,7 @@ class AdminProvider with ChangeNotifier {
       final response = await _apiService.get('/admin/fees/summary?$queryParams');
       if (response.statusCode == 200) {
         _adminFeesSummary = jsonDecode(response.body);
+        _feesError = null;
       } else if (response.statusCode == 403) {
         _feesError = '403 FORBIDDEN: Only TOP_ADMIN can access fee management.';
       } else {
@@ -329,22 +398,23 @@ class AdminProvider with ChangeNotifier {
   List<dynamic> _pendingRequests = [];
   List<dynamic> get pendingRequests => _pendingRequests;
 
-  Future<void> fetchPendingRequests() async {
-    _setLoading(true);
+  Future<void> fetchPendingRequests({bool silent = false}) async {
+    if (!silent && _pendingRequests.isEmpty) _setLoading(true);
     try {
       final response = await _apiService.get('/admin/student-requests');
       if (response.statusCode == 200) {
         _pendingRequests = jsonDecode(response.body);
+        notifyListeners();
       }
     } catch (e) { debugPrint(e.toString()); }
-    _setLoading(false);
+    if (!silent && _pendingRequests.isEmpty) _setLoading(false);
   }
 
   Future<bool> approveStudent(int studentId) async {
     try {
       final response = await _apiService.post('/admin/student-requests/$studentId/approve', {});
       if (response.statusCode == 200) {
-        await fetchPendingRequests();
+        await fetchPendingRequests(silent: true);
         return true;
       }
     } catch (e) { debugPrint(e.toString()); }
@@ -355,7 +425,7 @@ class AdminProvider with ChangeNotifier {
     try {
       final response = await _apiService.post('/admin/student-requests/$studentId/reject', {});
       if (response.statusCode == 200) {
-        await fetchPendingRequests();
+        await fetchPendingRequests(silent: true);
         return true;
       }
     } catch (e) { debugPrint(e.toString()); }
@@ -370,7 +440,8 @@ class AdminProvider with ChangeNotifier {
   List<dynamic> get students => _students;
   List<dynamic> get tasks => _tasks;
 
-  Future<void> fetchStudents() async {
+  Future<void> fetchStudents({bool silent = false}) async {
+    if (!silent && _students.isEmpty) _setLoading(true);
     try {
       final response = await _apiService.get('/admin/students');
       if (response.statusCode == 200) {
@@ -379,10 +450,13 @@ class AdminProvider with ChangeNotifier {
       }
     } catch (e) {
       debugPrint('fetchStudents error: $e');
+    } finally {
+      if (!silent && _students.isEmpty) _setLoading(false);
     }
   }
 
-  Future<void> fetchTasks() async {
+  Future<void> fetchTasks({bool silent = false}) async {
+    if (!silent && _tasks.isEmpty) _setLoading(true);
     try {
       final response = await _apiService.get('/admin/tasks');
       if (response.statusCode == 200) {
@@ -391,6 +465,8 @@ class AdminProvider with ChangeNotifier {
       }
     } catch (e) {
       debugPrint('fetchTasks error: $e');
+    } finally {
+      if (!silent && _tasks.isEmpty) _setLoading(false);
     }
   }
 
@@ -440,7 +516,7 @@ class AdminProvider with ChangeNotifier {
       final response = await _apiService.post('/admin/tasks', body);
       if (response.statusCode == 200 || response.statusCode == 201) {
         _error = null;
-        await fetchTasks();
+        await fetchTasks(silent: true);
         return null;
       } else {
         final data = jsonDecode(response.body);
@@ -461,7 +537,7 @@ class AdminProvider with ChangeNotifier {
       final response = await _apiService.delete('/admin/tasks/$taskId');
       if (response.statusCode == 200) {
         _error = null;
-        await fetchTasks();
+        await fetchTasks(silent: true);
         notifyListeners();
         return true;
       } else {
@@ -487,21 +563,22 @@ class AdminProvider with ChangeNotifier {
   List<dynamic> _leaveRequests = [];
   List<dynamic> get leaveRequests => _leaveRequests;
 
-  Future<void> fetchDailyAttendance(DateTime date) async {
-    _setLoading(true);
+  Future<void> fetchDailyAttendance(DateTime date, {bool silent = false}) async {
+    if (!silent && _dailyAttendance == null) _setLoading(true);
     try {
       final dateStr = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
       final response = await _apiService.get('/admin/attendance?date=$dateStr');
       if (response.statusCode == 200) {
         _dailyAttendance = jsonDecode(response.body);
         _error = null;
+        notifyListeners();
       } else {
         _error = 'Failed to load attendance';
       }
     } catch (e) {
       _error = 'Connection error: $e';
     } finally {
-      _setLoading(false);
+      if (!silent && _dailyAttendance == null) _setLoading(false);
     }
   }
 

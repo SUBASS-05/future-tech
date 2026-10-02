@@ -20,6 +20,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
     private final LeaveRequestRepository leaveRequestRepository;
+    private final com.futuretech.service.WebSocketEventPublisher eventPublisher;
 
     @Override
     public DailyAttendanceResponse getDailyAttendance(LocalDate date) {
@@ -152,6 +153,12 @@ public class AttendanceServiceImpl implements AttendanceService {
         }
 
         attendanceRepository.save(att);
+
+        if (student.getUser() != null) {
+            eventPublisher.publishToUser(student.getUser().getEmail(), "ATTENDANCE_UPDATED", "ATTENDANCE", att.getId());
+        }
+        eventPublisher.publishToAdmin("ATTENDANCE_UPDATED", "ATTENDANCE", att.getId());
+
         return new MessageResponse("Attendance marked successfully");
     }
 
@@ -190,7 +197,13 @@ public class AttendanceServiceImpl implements AttendanceService {
             att.setStatus(statusEnum);
             att.setRemarks(request.getRemarks());
             attendanceRepository.save(att);
+
+            if (s.getUser() != null) {
+                eventPublisher.publishToUser(s.getUser().getEmail(), "ATTENDANCE_UPDATED", "ATTENDANCE", att.getId());
+            }
         }
+
+        eventPublisher.publishToAdmin("ATTENDANCE_UPDATED", "ATTENDANCE", null);
 
         return new MessageResponse("Bulk attendance marked for " + studentsToMark.size() + " students");
     }

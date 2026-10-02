@@ -32,6 +32,7 @@ public class FinanceServiceImpl implements FinanceService {
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
     private final FileStorageService fileStorageService;
+    private final com.futuretech.service.WebSocketEventPublisher eventPublisher;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd MMM yyyy");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("hh:mm a");
@@ -158,6 +159,11 @@ public class FinanceServiceImpl implements FinanceService {
                 .build();
 
         paymentRepository.save(payment);
+
+        eventPublisher.publishToUser(email, "PAYMENT_CREATED", "PAYMENT", payment.getId());
+        eventPublisher.publishToUser(email, "FEE_STATUS_UPDATED", "FEE", student.getId());
+        eventPublisher.publishToAdmin("PAYMENT_CREATED", "PAYMENT", payment.getId());
+        eventPublisher.publishToAdmin("FEE_STATUS_UPDATED", "FEE", student.getId());
 
         return getStudentFeeSummary(email);
     }

@@ -6,6 +6,7 @@ import com.futuretech.entity.enums.StudentStatus;
 import com.futuretech.repository.StudentRepository;
 import com.futuretech.service.AdminService;
 import com.futuretech.service.EmailService;
+import com.futuretech.service.WebSocketEventPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 public class AdminServiceImpl implements AdminService {
     private final StudentRepository studentRepository;
     private final EmailService emailService;
+    private final WebSocketEventPublisher eventPublisher;
 
     @Override
     public List<StudentRequestDTO> getPendingRequests() {
@@ -59,6 +61,12 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new RuntimeException("Student not found"));
         student.setStatus(StudentStatus.APPROVED);
         studentRepository.save(student);
+
+        if (student.getUser() != null) {
+            eventPublisher.publishToUser(student.getUser().getEmail(), "STUDENT_APPROVED", "STUDENT", student.getId());
+        }
+        eventPublisher.publishToAdmin("STUDENT_APPROVED", "STUDENT", student.getId());
+
         return new MessageResponse("Student approved successfully");
     }
 
@@ -69,6 +77,12 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new RuntimeException("Student not found"));
         student.setStatus(StudentStatus.REJECTED);
         studentRepository.save(student);
+
+        if (student.getUser() != null) {
+            eventPublisher.publishToUser(student.getUser().getEmail(), "STUDENT_REJECTED", "STUDENT", student.getId());
+        }
+        eventPublisher.publishToAdmin("STUDENT_REJECTED", "STUDENT", student.getId());
+
         return new MessageResponse("Student rejected");
     }
 }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../core/api/api_service.dart';
+import '../core/websocket/websocket_service.dart';
 import '../data/secure_storage/secure_storage.dart';
 
 class AuthProvider with ChangeNotifier {
@@ -27,6 +28,7 @@ class AuthProvider with ChangeNotifier {
     if (token != null && userRole != null) {
       _role = userRole;
       _profileStatus = pStatus ?? 'COMPLETED'; 
+      WebSocketService().connect(token: token, role: userRole);
       notifyListeners();
     }
   }
@@ -55,6 +57,8 @@ class AuthProvider with ChangeNotifier {
         _profileStatus = profileStatus;
         _error = null;
         _setLoading(false);
+        
+        WebSocketService().connect(token: token, role: userRole);
         
         return profileStatus; 
       } else {
@@ -141,6 +145,7 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> logout() async {
+    WebSocketService().disconnect();
     await SecureStorage.clearAll();
     _role = null;
     notifyListeners();

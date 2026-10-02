@@ -23,6 +23,7 @@ public class TaskServiceImpl implements TaskService {
     private final TaskAssignmentRepository taskAssignmentRepository;
     private final UserRepository userRepository;
     private final StudentRepository studentRepository;
+    private final com.futuretech.service.WebSocketEventPublisher eventPublisher;
 
     private String calculateStatus(TaskAssignment a) {
         if (a.getCompletedAt() != null) return "COMPLETED";
@@ -109,6 +110,13 @@ public class TaskServiceImpl implements TaskService {
             ).collect(Collectors.toList());
             
             taskAssignmentRepository.saveAll(assignments);
+            
+            for (Student s : students) {
+                if (s.getUser() != null && s.getUser().getEmail() != null) {
+                    eventPublisher.publishToUser(s.getUser().getEmail(), "TASK_CREATED", "TASK", savedTask.getId());
+                }
+            }
+            eventPublisher.publishToAdmin("TASK_CREATED", "TASK", savedTask.getId());
         } else {
             throw new RuntimeException("At least one student must be selected");
         }
@@ -225,6 +233,15 @@ public class TaskServiceImpl implements TaskService {
         }
         
         taskRepository.save(task);
+        
+        List<TaskAssignment> assignments = taskAssignmentRepository.findByTaskId(taskId);
+        for (TaskAssignment a : assignments) {
+            if (a.getStudent() != null && a.getStudent().getUser() != null && a.getStudent().getUser().getEmail() != null) {
+                eventPublisher.publishToUser(a.getStudent().getUser().getEmail(), "TASK_UPDATED", "TASK", taskId);
+            }
+        }
+        eventPublisher.publishToAdmin("TASK_UPDATED", "TASK", taskId);
+        
         return new MessageResponse("Task updated successfully");
     }
 
@@ -234,6 +251,14 @@ public class TaskServiceImpl implements TaskService {
         Task task = taskRepository.findById(taskId)
             .orElseThrow(() -> new RuntimeException("Task not found"));
             
+        List<TaskAssignment> assignments = taskAssignmentRepository.findByTaskId(taskId);
+        for (TaskAssignment a : assignments) {
+            if (a.getStudent() != null && a.getStudent().getUser() != null && a.getStudent().getUser().getEmail() != null) {
+                eventPublisher.publishToUser(a.getStudent().getUser().getEmail(), "TASK_DELETED", "TASK", taskId);
+            }
+        }
+        eventPublisher.publishToAdmin("TASK_DELETED", "TASK", taskId);
+
         taskAssignmentRepository.deleteByTaskId(taskId);
         taskRepository.delete(task);
         return new MessageResponse("Task deleted successfully");
@@ -442,6 +467,10 @@ public class TaskServiceImpl implements TaskService {
         }
         
         taskAssignmentRepository.save(assignment);
+        
+        eventPublisher.publishToUser(studentEmail, "TASK_STATUS_UPDATED", "TASK", taskId);
+        eventPublisher.publishToAdmin("TASK_STATUS_UPDATED", "TASK", taskId);
+        
         return new MessageResponse("Task status updated");
     }
 }
