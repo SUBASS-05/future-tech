@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/api/api_service.dart';
 import '../../../providers/auth_provider.dart';
 import '../../widgets/components.dart';
 import '../../../core/theme/design_system.dart';
@@ -20,7 +21,61 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String _selectedRole = 'STUDENT';
   bool _obscurePassword = true;
 
-  // The registration logic has been moved inline to the button onPressed callback
+  void _showServerSettingsDialog() {
+    final currentUrl = ApiService.baseUrl;
+    final urlController = TextEditingController(text: currentUrl);
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Server Connection Settings'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Enter your backend server IP or URL (e.g. 192.168.1.5:8080 or localhost:8080):',
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: urlController,
+              decoration: const InputDecoration(
+                labelText: 'Server Base URL',
+                hintText: 'http://192.168.x.x:8080/api',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (urlController.text.trim().isNotEmpty) {
+                await ApiService.setCustomBaseUrl(urlController.text.trim());
+                if (ctx.mounted) {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Server URL updated successfully!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -38,6 +93,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Student Registration'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: 'Server Settings',
+            onPressed: _showServerSettingsDialog,
+          ),
+        ],
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -123,7 +185,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           _selectedRole,
                         );
                       } else {
-                        // Extract first and last name from full name
                         final names = _nameController.text.trim().split(' ');
                         final firstName = names.isNotEmpty ? names.first : '';
                         final lastName = names.length > 1 ? names.sublist(1).join(' ') : '';
@@ -148,7 +209,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               backgroundColor: FTColors.success,
                             ),
                           );
-                          Navigator.pop(context); // Go back to login screen
+                          Navigator.pop(context);
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -156,7 +217,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 children: [
                                   const Icon(Icons.error_outline, color: FTColors.surface),
                                   const SizedBox(width: FTSpacing.sm),
-                                  Expanded(child: Text(authProvider.error ?? 'Registration failed', style: FTTypography.body.copyWith(color: FTColors.surface))),
+                                  Expanded(
+                                    child: Text(
+                                      authProvider.error ?? 'Registration failed',
+                                      style: FTTypography.body.copyWith(color: FTColors.surface),
+                                    ),
+                                  ),
                                 ],
                               ),
                               backgroundColor: FTColors.error,

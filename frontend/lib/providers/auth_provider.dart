@@ -63,7 +63,11 @@ class AuthProvider with ChangeNotifier {
         return null;
       }
     } catch (e) {
-      _error = 'Connection error: $e';
+      if (e.toString().contains('TimeoutException') || e.toString().contains('SocketException')) {
+        _error = 'Server unreachable. Please verify phone & PC are on the same Wi-Fi and update Server IP in Settings.';
+      } else {
+        _error = 'Connection error: $e';
+      }
       _setLoading(false);
       return null;
     }
@@ -96,7 +100,11 @@ class AuthProvider with ChangeNotifier {
         return false;
       }
     } catch (e) {
-      _error = 'Connection error: $e';
+      if (e.toString().contains('TimeoutException') || e.toString().contains('SocketException')) {
+        _error = 'Server unreachable. Please verify phone & PC are on the same Wi-Fi and update Server IP in Settings.';
+      } else {
+        _error = 'Connection error: $e';
+      }
       _setLoading(false);
       return false;
     }
@@ -122,7 +130,11 @@ class AuthProvider with ChangeNotifier {
         return false;
       }
     } catch (e) {
-      _error = 'Connection error: $e';
+      if (e.toString().contains('TimeoutException') || e.toString().contains('SocketException')) {
+        _error = 'Server unreachable. Please verify phone & PC are on the same Wi-Fi and update Server IP in Settings.';
+      } else {
+        _error = 'Connection error: $e';
+      }
       _setLoading(false);
       return false;
     }

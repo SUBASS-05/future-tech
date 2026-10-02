@@ -6,6 +6,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../presentation/widgets/components.dart';
 import '../../../core/theme/design_system.dart';
 import '../../../data/secure_storage/secure_storage.dart';
+
 class ProfileCompletionScreen extends StatefulWidget {
   const ProfileCompletionScreen({super.key});
 
@@ -17,6 +18,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
   final _formKey = GlobalKey<FormState>();
   
   // Personal
+  final _emailController = TextEditingController();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _dobController = TextEditingController();
@@ -45,6 +47,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
   
   final _joiningYearController = TextEditingController();
   final _passingYearController = TextEditingController();
+  final _batchController = TextEditingController();
   
   // Parent
   final _parentNameController = TextEditingController();
@@ -55,8 +58,20 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
   @override
   void initState() {
     super.initState();
+    _joiningYearController.addListener(_updateBatch);
+    _passingYearController.addListener(_updateBatch);
     _loadEmailFromStorage();
     _loadData();
+  }
+
+  void _updateBatch() {
+    final join = _joiningYearController.text.trim();
+    final pass = _passingYearController.text.trim();
+    if (join.isNotEmpty && pass.isNotEmpty) {
+      _batchController.text = "$join–$pass";
+    } else if (_batchController.text.isEmpty) {
+      _batchController.text = "";
+    }
   }
 
   // Loads the email immediately from secure storage (saved at login)
@@ -64,10 +79,12 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
   Future<void> _loadEmailFromStorage() async {
     final email = await SecureStorage.getEmail();
     if (email != null && mounted) {
-      setState(() => _email = email);
+      setState(() {
+        _email = email;
+        _emailController.text = email;
+      });
     }
   }
-
 
   Future<void> _loadData() async {
     final studentProvider = context.read<StudentProvider>();
@@ -81,7 +98,10 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
         _institutions = institutions;
         
         if (profile != null) {
-          _email = profile['email'];
+          _email = profile['email'] ?? _email;
+          if (_email != null) {
+            _emailController.text = _email!;
+          }
           _studentCode = profile['studentCode'];
           
           _firstNameController.text = profile['firstName'] ?? '';
@@ -104,7 +124,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
           _selectedInstitutionId = profile['institutionId'];
           if (_selectedInstitutionId != null) {
             bool found = false;
-            for(var inst in _institutions) {
+            for (var inst in _institutions) {
               if (inst['id'] == _selectedInstitutionId) found = true;
             }
             if (!found) _selectedInstitutionId = null;
@@ -123,6 +143,11 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
           if (profile['passingYear'] != null) {
             _passingYearController.text = profile['passingYear'].toString();
           }
+          if (profile['academicBatch'] != null && profile['academicBatch'].toString().isNotEmpty) {
+            _batchController.text = profile['academicBatch'].toString();
+          } else {
+            _updateBatch();
+          }
           
           _parentNameController.text = profile['parentName'] ?? '';
           _selectedRelationship = profile['parentRelationship'];
@@ -139,13 +164,12 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
     if (mounted) {
       setState(() {
         _departments = depts;
-        // Don't clear if already selected and part of the new list
         if (_selectedDepartmentId != null) {
-            bool found = false;
-            for(var d in _departments) {
-                if (d['id'] == _selectedDepartmentId) found = true;
-            }
-            if(!found) _selectedDepartmentId = null;
+          bool found = false;
+          for (var d in _departments) {
+            if (d['id'] == _selectedDepartmentId) found = true;
+          }
+          if (!found) _selectedDepartmentId = null;
         }
       });
     }
@@ -163,15 +187,6 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
         _dobController.text = DateFormat('yyyy-MM-dd').format(picked);
       });
     }
-  }
-
-  String get _calculatedBatch {
-    final join = _joiningYearController.text.trim();
-    final pass = _passingYearController.text.trim();
-    if (join.isNotEmpty && pass.isNotEmpty) {
-      return "$join–$pass";
-    }
-    return "";
   }
 
   Future<void> _submitProfile() async {
@@ -214,6 +229,31 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
         }
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _joiningYearController.removeListener(_updateBatch);
+    _passingYearController.removeListener(_updateBatch);
+    _emailController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _dobController.dispose();
+    _phoneController.dispose();
+    _addressController.dispose();
+    _cityController.dispose();
+    _pincodeController.dispose();
+    _departmentNameController.dispose();
+    _classStandardController.dispose();
+    _sectionController.dispose();
+    _academicYearController.dispose();
+    _joiningYearController.dispose();
+    _passingYearController.dispose();
+    _batchController.dispose();
+    _parentNameController.dispose();
+    _parentPhoneController.dispose();
+    _altParentPhoneController.dispose();
+    super.dispose();
   }
 
   @override
@@ -275,9 +315,10 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
             child: Text("Student ID: $_studentCode", style: FTTypography.bodyLarge.copyWith(fontWeight: FontWeight.bold)),
           ),
         FTTextField(
-          initialValue: _email ?? '',
+          controller: _emailController,
           readOnly: true,
-          label: 'Email (Cannot be changed)',
+          label: 'Registered Email (Read-Only)',
+          suffixIcon: const Icon(Icons.lock_outline, color: FTColors.textSecondary, size: 20),
         ),
         const SizedBox(height: FTSpacing.md),
         Row(
@@ -419,19 +460,13 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
             ],
           ),
           const SizedBox(height: FTSpacing.md),
-          Container(
-            padding: const EdgeInsets.all(FTSpacing.md),
-            decoration: BoxDecoration(border: Border.all(color: FTColors.border), borderRadius: BorderRadius.circular(FTRadius.small)),
-            width: double.infinity,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Academic Batch', style: FTTypography.caption.copyWith(color: FTColors.textSecondary)),
-                const SizedBox(height: FTSpacing.xs),
-                Text(_calculatedBatch.isEmpty ? 'Automatically calculated' : _calculatedBatch, style: FTTypography.bodyLarge),
-              ],
-            ),
-          )
+          FTTextField(
+            controller: _batchController,
+            readOnly: true,
+            label: 'Academic Batch (Calculated - Read-Only)',
+            hint: 'Calculated from Joining & Passing Year (e.g. 2022–2026)',
+            suffixIcon: const Icon(Icons.lock_outline, color: FTColors.textSecondary, size: 20),
+          ),
         ],
         if (_selectedEducationType == 'SCHOOL') ...[
           FTDropdown<int>(

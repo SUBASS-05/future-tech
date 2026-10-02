@@ -28,4 +28,9 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
+
+    @GetMapping("/health")
+    public ResponseEntity<MessageResponse> health() {
+        return ResponseEntity.ok(new MessageResponse("Backend is online"));
+    }
 }

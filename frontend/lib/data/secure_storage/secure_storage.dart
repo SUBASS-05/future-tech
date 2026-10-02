@@ -32,6 +32,7 @@ class SecureStorage {
   }
 
   static const _keyEmail = 'user_email';
+  static const _keyServerUrl = 'server_url';
 
   static Future<void> saveEmail(String email) async {
     await _storage.write(key: _keyEmail, value: email);
@@ -39,6 +40,14 @@ class SecureStorage {
 
   static Future<String?> getEmail() async {
     return await _storage.read(key: _keyEmail);
+  }
+
+  static Future<void> saveServerUrl(String url) async {
+    await _storage.write(key: _keyServerUrl, value: url);
+  }
+
+  static Future<String?> getServerUrl() async {
+    return await _storage.read(key: _keyServerUrl);
   }
 
   static Future<void> clearAll() async {
